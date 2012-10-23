@@ -10,7 +10,8 @@
 #define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012, lua-LevelDB by Marco Pompili (marcs.pompili@gmail.com)."
 #define LUALEVELDB_DESCRIPTION	"Bindings for Google's LevelDB library."
 
-#define LUALEVELDB_DB_MT		"leveldb.database"
+#define LUALEVELDB_DB_MT		"google.leveldb"
+#define LUALEVELDB_DB_NM		"leveldb"
 
 extern "C" {
 
@@ -19,12 +20,12 @@ extern "C" {
 #include <lualib.h>
 
 static int LvlDB_f_open(lua_State *L) {
-	const char* filename = luaL_checkstring(L, 1);
-	leveldb::DB* db;
+	const char *filename = luaL_checkstring(L, 1);
 
+	leveldb::DB *db;
 	leveldb::Options options;
 
-	//TODO Make the options dynamic, eventually...
+	//TODO Make these options dynamic, eventually...
 	options.create_if_missing = true;
 	options.error_if_exists = false;
 
@@ -32,16 +33,21 @@ static int LvlDB_f_open(lua_State *L) {
 
 	if (!s.ok())
 		std::cerr << "LvlDB_f_open: Error opening creating database: " << s.ToString() << std::endl;
-	else
-		(leveldb::DB*) lua_newuserdata(L, sizeof(leveldb::DB*));
+	else {
+		// Pushing pointer to the database in the stack
+		lua_pushlightuserdata(L, db);
+
+		luaL_getmetatable(L, LUALEVELDB_DB_MT);
+		lua_setmetatable(L, -2);
+	}
 
 	return 1;
 }
 
 static int LvlDB_f_close(lua_State *L) {
-	leveldb::DB* db = (leveldb::DB*) lua_touserdata(L, 1);
+	leveldb::DB *db = (leveldb::DB*) lua_touserdata(L, 1);
 
-	std::cout << "LvlDB_f_close: Closing DB!";
+	std::cout << "LvlDB_f_close: Closing DB!\n";
 
 	delete db;
 
@@ -49,16 +55,24 @@ static int LvlDB_f_close(lua_State *L) {
 }
 
 static int LvlDB_f_check(lua_State *L) {
-	leveldb::DB* db = (leveldb::DB*) lua_touserdata(L, 1);
+	leveldb::DB *db = (leveldb::DB*) lua_touserdata(L, 1);
 
-	std::cout << "LvlDB_f_check: checking database instance.";
+	std::cout << "LvlDB_f_check: checking database instance.\n";
 	lua_pushboolean(L, db != NULL ? true : false);
 
 	return 1;
 }
 
+// service function for checking user-data
+static leveldb::DB *check_leveldb(lua_State *L) {
+	void *ud = luaL_checkudata(L, 1, LUALEVELDB_DB_MT);
+	luaL_argcheck(L, ud != NULL, 1, "'leveldb' expected");
+
+	return (leveldb::DB *)ud;
+}
+
 static int LvlDB_m_put(lua_State *L) {
-	leveldb::DB* db = (leveldb::DB*) lua_touserdata(L, 1);
+	leveldb::DB *db = check_leveldb(L);
 
 	std::string key = (const char*) lua_tostring(L, 2);
 	std::string value = (const char*) lua_tostring(L, 3);
@@ -75,9 +89,9 @@ static int LvlDB_m_put(lua_State *L) {
 }
 
 static int LvlDB_m_get(lua_State *L) {
-	leveldb::DB* db = (leveldb::DB*) lua_touserdata(L, 1);
+	leveldb::DB *db = check_leveldb(L);
 
-	std::string key = (const char*) lua_tostring(L, 2);
+	std::string key = (const char*) luaL_checkstring(L, 2);
 	std::string value;
 
 	leveldb::Status s = db->Get(leveldb::ReadOptions(), key, &value);
@@ -94,9 +108,9 @@ static int LvlDB_m_get(lua_State *L) {
 }
 
 static int LvlDB_m_del(lua_State *L) {
-	leveldb::DB* db = (leveldb::DB*) lua_touserdata(L, 1);
+	leveldb::DB *db = check_leveldb(L);
 
-	std::string key = (const char*) luaL_checkstring(L, 2);
+	std::string key = (const char *) luaL_checkstring(L, 2);
 
 	leveldb::Status s = db->Delete(leveldb::WriteOptions(), key);
 
@@ -105,7 +119,7 @@ static int LvlDB_m_del(lua_State *L) {
 
 // TODO: check this method and link it to the method meta-table
 static int LvlDB_m_batch(lua_State *L) {
-	leveldb::DB* db = (leveldb::DB*) lua_touserdata(L, 1);
+	leveldb::DB *db = check_leveldb(L);
 
 	std::string key = luaL_checkstring(L, 1);
 	std::string value = luaL_checkstring(L, 2);
@@ -120,19 +134,20 @@ static int LvlDB_m_batch(lua_State *L) {
 }
 
 static int LvlDB_m_snapshot(lua_State *L) {
-	leveldb::DB* db = (leveldb::DB*) lua_touserdata(L, 1);
+	leveldb::DB *db = check_leveldb(L);
 
 	leveldb::ReadOptions options;
 	options.snapshot = db->GetSnapshot();
 
-	leveldb::Iterator* iter = db->NewIterator(options);
+	leveldb::Iterator *iter = db->NewIterator(options);
 	delete iter;
+
 	db->ReleaseSnapshot(options.snapshot);
 
 	return 1;
 }
 
-// static functions
+// static oriented functions
 static const struct luaL_reg leveldb_f [] = {
 		{ "open", LvlDB_f_open },
 		{ "check", LvlDB_f_check},
@@ -140,7 +155,7 @@ static const struct luaL_reg leveldb_f [] = {
 		{ NULL, NULL }
 };
 
-// object methods
+// object oriented methods
 static const struct luaL_reg leveldb_m [] = {
 		{ "put", LvlDB_m_put },
 		{ "get", LvlDB_m_get },
@@ -149,7 +164,7 @@ static const struct luaL_reg leveldb_m [] = {
 		{ NULL, NULL }
 };
 
-LUALIB_API int luaopen_leveldb(lua_State *L) {
+int luaopen_leveldb(lua_State *L) {
 
 	luaL_newmetatable(L, LUALEVELDB_DB_MT);
 
@@ -163,7 +178,7 @@ LUALIB_API int luaopen_leveldb(lua_State *L) {
 	luaL_openlib(L, NULL, leveldb_m, 0);
 
 	// static functions registered on library
-	luaL_openlib(L, "database", leveldb_f, 0);
+	luaL_openlib(L, LUALEVELDB_DB_NM, leveldb_f, 0);
 
 	return 1;
 }
