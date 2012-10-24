@@ -6,9 +6,9 @@
 // LevelDB atomic operation library
 #include <leveldb/write_batch.h>
 
-#define LUALEVELDB_VERSION		"lua-LevelDB 0.1.2"
-#define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012, lua-LevelDB by Marco Pompili (marcs.pompili@gmail.com)."
-#define LUALEVELDB_DESCRIPTION	"Bindings for Google's LevelDB library."
+#define LUALEVELDB_VERSION		"lua-leveldb 0.1.2"
+#define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012, lua-leveldb by Marco Pompili (marcs.pompili@gmail.com)."
+#define LUALEVELDB_DESCRIPTION	"Bindings for Google's leveldb library."
 
 #define LUALEVELDB_DB_MT		"google.leveldb"
 #define LUALEVELDB_DB_NM		"leveldb"
@@ -103,7 +103,6 @@ static int LvlDB_m_get(lua_State *L) {
 		lua_pushboolean(L, false);
 	}
 
-
 	return 1;
 }
 
@@ -160,6 +159,7 @@ static const struct luaL_reg leveldb_m [] = {
 		{ "put", LvlDB_m_put },
 		{ "get", LvlDB_m_get },
 		{ "delete", LvlDB_m_del },
+		{ "batch", LvlDB_m_batch },
 		{ "snapshot", LvlDB_m_snapshot },
 		{ NULL, NULL }
 };
