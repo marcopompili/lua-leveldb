@@ -6,4 +6,4 @@ then
 	exit 1
 fi
 
-tshark -q -X lua_script:ws_test.lua -r $1
+tshark -q -X lua_script:ws_store.lua -r $1

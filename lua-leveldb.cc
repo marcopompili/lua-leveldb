@@ -12,6 +12,7 @@
 
 #define LUALEVELDB_FN			"leveldb"
 #define LUALEVELDB_DB_MT		"leveldb.database"
+#define LUALEVELDB_STATUS_MT	"leveldb.status"
 #define LUALEVELDB_ITER_MT		"leveldb.iterator"
 #define LUALEVELDB_BATCH_MT		"leveldb.batch"
 
@@ -50,7 +51,7 @@ static int lvldb_f_open(lua_State *L) {
 }
 
 static int lvldb_f_close(lua_State *L) {
-	DB *db = (leveldb::DB*) lua_touserdata(L, 1);
+	DB *db = (DB*) lua_touserdata(L, 1);
 
 	cout << "LvlDB_f_close: Closing DB!\n";
 
@@ -60,7 +61,7 @@ static int lvldb_f_close(lua_State *L) {
 }
 
 static int lvldb_f_check(lua_State *L) {
-	DB *db = (leveldb::DB*) lua_touserdata(L, 1);
+	DB *db = (DB*) lua_touserdata(L, 1);
 
 	cout << "LvlDB_f_check: checking database instance.\n";
 	lua_pushboolean(L, db != NULL ? true : false);
@@ -69,7 +70,7 @@ static int lvldb_f_check(lua_State *L) {
 }
 
 // service function for checking user-data
-static leveldb::DB *check_leveldb(lua_State *L) {
+static DB *check_leveldb(lua_State *L) {
 	void *ud = luaL_checkudata(L, 1, LUALEVELDB_DB_MT);
 	luaL_argcheck(L, ud != NULL, 1, "'database' expected");
 
@@ -82,7 +83,7 @@ static int lvldb_db_put(lua_State *L) {
 	string key = (const char*) lua_tostring(L, 2);
 	string value = (const char*) lua_tostring(L, 3);
 
-	Status s = db->Put(leveldb::WriteOptions(), key, value);
+	Status s = db->Put(WriteOptions(), key, value);
 
 	if (s.ok()) {
 		lua_pushboolean(L, true);
@@ -98,7 +99,7 @@ static int lvldb_db_del(lua_State *L) {
 
 	string key = (const char *) luaL_checkstring(L, 2);
 
-	Status s = db->Delete(leveldb::WriteOptions(), key);
+	Status s = db->Delete(WriteOptions(), key);
 
 	return 1;
 }
@@ -109,7 +110,7 @@ static int lvldb_db_get(lua_State *L) {
 	string key = (const char*) luaL_checkstring(L, 2);
 	string value;
 
-	Status s = db->Get(leveldb::ReadOptions(), key, &value);
+	Status s = db->Get(ReadOptions(), key, &value);
 
 	if (s.ok()) {
 		lua_pushstring(L, value.c_str());
@@ -124,7 +125,7 @@ static int lvldb_db_get(lua_State *L) {
 static int lvldb_db_iterator(lua_State *L) {
 	DB *db = check_leveldb(L);
 
-	Iterator *it = db->NewIterator(leveldb::ReadOptions());
+	Iterator *it = db->NewIterator(ReadOptions());
 
 	lua_pushlightuserdata(L, it);
 
@@ -143,16 +144,32 @@ static int lvldb_db_batch(lua_State *L) {
 	return 1;
 }
 
+// TODO: test this method
 static int lvldb_db_snapshot(lua_State *L) {
 	DB *db = check_leveldb(L);
 
-	leveldb::ReadOptions options;
+	ReadOptions options;
 	options.snapshot = db->GetSnapshot();
 
-	leveldb::Iterator *iter = db->NewIterator(options);
+	Iterator *iter = db->NewIterator(options);
 	delete iter;
 
 	db->ReleaseSnapshot(options.snapshot);
+
+	return 1;
+}
+
+static Status *check_status(lua_State *L) {
+	void *ud = luaL_checkudata(L, 1, LUALEVELDB_STATUS_MT);
+	luaL_argcheck(L, ud != NULL, 1, "'status' expected");
+
+	return (Status *) ud;
+}
+
+static int lvldb_status_ok(lua_State *L) {
+	Status *s = check_status(L);
+
+	lua_pushboolean(L, s->ok());
 
 	return 1;
 }
@@ -185,65 +202,119 @@ static int lvldb_batch_del(lua_State *L) {
 	return 0;
 }
 
-static Iterator *check_it(lua_State *L) {
+static Iterator *check_iter(lua_State *L) {
 	void *ud = luaL_checkudata(L, 1, LUALEVELDB_ITER_MT);
 	luaL_argcheck(L, ud != NULL, 1, "'iterator' expected");
 
 	return (Iterator *) ud;
 }
 
-static int lvldb_it_valid(lua_State *L) {
-	Iterator *it = check_it(L);
+static int lvldb_it_seek(lua_State *L) {
+	Iterator *iter = check_iter(L);
 
-	lua_pushboolean(L, it->Valid());
+	string start = luaL_checkstring(L, 2);
+
+	iter->Seek(start);
+
+	return 0;
+}
+
+static int lvldb_it_seekto_first(lua_State *L) {
+	Iterator *iter = check_iter(L);
+
+	iter->SeekToFirst();
+
+	return 0;
+}
+
+static int lvldb_it_seekto_last(lua_State *L) {
+	Iterator *iter = check_iter(L);
+
+	iter->SeekToLast();
+
+	return 0;
+}
+
+static int lvldb_it_valid(lua_State *L) {
+	Iterator *iter = check_iter(L);
+
+	lua_pushboolean(L, iter->Valid());
 
 	return 1;
 }
 
 static int lvldb_it_next(lua_State *L) {
-	Iterator *it = check_it(L);
+	Iterator *iter = check_iter(L);
 
-	it->Next();
+	iter->Next();
 
 	return 0;
+}
+
+static int lvldb_it_key(lua_State *L) {
+	Iterator *iter = check_iter(L);
+
+	lua_pushstring(L, iter->key().ToString().c_str());
+
+	return 1;
+}
+
+static int lvldb_it_value(lua_State *L) {
+	Iterator *iter = check_iter(L);
+
+	lua_pushstring(L, iter->value().ToString().c_str());
+
+	return 1;
 }
 
 // empty
 static const struct luaL_reg E [] = { { NULL, NULL } };
 
-// static oriented functions
+// basic leveldb functions
 static const struct luaL_reg leveldb_f [] = {
-	{ "open", lvldb_f_open },
-	{ "check", lvldb_f_check },
-	{ "close", lvldb_f_close },
-	{ NULL, NULL }
+		{ "open", lvldb_f_open },
+		{ "check", lvldb_f_check },
+		{ "close", lvldb_f_close },
+		{ NULL, NULL }
 };
 
-// object oriented methods for database object
+// object oriented methods for database
 static const struct luaL_reg leveldb_m_db [] = {
-	{ "put", lvldb_db_put },
-	{ "delete", lvldb_db_del },
-	{ "get", lvldb_db_get },
-	{ "iterator", lvldb_db_iterator },
-	{ "batch", lvldb_db_batch },
-	{ "snapshot", lvldb_db_snapshot },
-	{ NULL, NULL }
+		{ "put", lvldb_db_put },
+		{ "delete", lvldb_db_del },
+		{ "get", lvldb_db_get },
+		{ "iterator", lvldb_db_iterator },
+		{ "batch", lvldb_db_batch },
+		{ "snapshot", lvldb_db_snapshot },
+		{ NULL, NULL }
 };
 
+// object oriented methods for status
+static const struct luaL_reg leveldb_m_status [] = {
+		{ "ok", lvldb_status_ok },
+		{ NULL, NULL }
+};
+
+// object oriented methods for batch
 static const struct luaL_reg leveldb_m_btch [] = {
-	{ "put",  lvldb_batch_put },
-	{ "delete", lvldb_batch_del },
-	{ NULL, NULL }
+		{ "put",  lvldb_batch_put },
+		{ "delete", lvldb_batch_del },
+		{ NULL, NULL }
 };
 
 // object oriented methods for iterator
 static const struct luaL_reg leveldb_m_iter [] = {
-	{ "valid", lvldb_it_valid },
-	{ "next" , lvldb_it_next },
-	{ NULL, NULL }
+		{ "seek", lvldb_it_seek },
+		{ "seekToFirst", lvldb_it_seekto_first },
+		{ "seekToLast", lvldb_it_seekto_last },
+		{ "valid", lvldb_it_valid },
+		{ "next" , lvldb_it_next },
+		{ "key", lvldb_it_key },
+		{ "value", lvldb_it_value },
+		{ NULL, NULL }
 };
 
-// stack procedure for adding a library
+// procedure for adding a library
 static void add_lib(lua_State *L, const char *metatable, const struct luaL_reg lib []) {
 
 	// let's build the function meta-table
@@ -274,8 +345,9 @@ int luaopen_leveldb(lua_State *L) {
 	lua_pushliteral(L, LUALEVELDB_DESCRIPTION);
 	lua_setfield(L, -2, "_DESCRIPTION");
 
-	// adding database, iterator, batch methods
+	// adding database, status, iterator, batch methods
 	add_lib(L, LUALEVELDB_DB_MT, leveldb_m_db);
+	add_lib(L, LUALEVELDB_STATUS_MT, leveldb_m_status);
 	add_lib(L, LUALEVELDB_ITER_MT, leveldb_m_iter);
 	add_lib(L, LUALEVELDB_BATCH_MT, leveldb_m_btch);
 
