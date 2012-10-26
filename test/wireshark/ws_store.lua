@@ -1,4 +1,4 @@
-package.cpath = package.cpath .. ';../../Debug/?.so'
+package.cpath = package.cpath .. ';../../Release/?.so'
 package.path = package.path .. ';./libs/?.lua'
 
 require 'lua-leveldb'
@@ -46,9 +46,15 @@ do
 			
 			local frame_epoch = tostring(frame_time_epoch())
  			local http_header = dexer(tostring(http_extractor_f().value))
- 			--print (http_header)
+ 			if http_data_text_f() ~= nil
+ 			then
+ 				local http_body = dexer(tostring(http_data_text_f().value))
+ 				wsdb:put(frame_epoch, http_header .. http_body)
+ 			else
+ 				wsdb:put(frame_epoch, http_header)
+ 			end
  			
- 			wsdb:put(frame_epoch, http_header)
+ 			
 		end
 
 		--[[function http_res_tap.packet(pinfo, tvb)

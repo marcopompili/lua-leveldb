@@ -8,11 +8,10 @@ local iter = wsdb:iterator ()
 -- initialize the iterator
 iter:seekToFirst ()
 
---[[ iterating
+-- iterating
 while(iter:valid())
 do
-	iter:next()
+	print(iter:key() .. " " .. iter:value())
 	
-	print (iter:key())
+	iter:next()
 end
-]]--

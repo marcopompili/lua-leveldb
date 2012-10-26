@@ -6,15 +6,15 @@
 // leveldb atomic operation library
 #include <leveldb/write_batch.h>
 
-#define LUALEVELDB_VERSION		"lua-leveldb 0.2.0"
-#define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012, lua-leveldb by Marco Pompili (marcs.pompili@gmail.com)."
-#define LUALEVELDB_DESCRIPTION	"Bindings for Google's leveldb library."
+#define LUALEVELDB_VERSION			"lua-leveldb 0.2.0"
+#define LUALEVELDB_COPYRIGHT		"Copyright (C) 2012, lua-leveldb by Marco Pompili (marcs.pompili@gmail.com)."
+#define LUALEVELDB_DESCRIPTION		"Bindings for Google's leveldb library."
 
-#define LUALEVELDB_FN			"leveldb"
-#define LUALEVELDB_DB_MT		"leveldb.database"
-#define LUALEVELDB_STATUS_MT	"leveldb.status"
-#define LUALEVELDB_ITER_MT		"leveldb.iterator"
-#define LUALEVELDB_BATCH_MT		"leveldb.batch"
+#define LUALEVELDB_FN				"leveldb"
+#define LUALEVELDB_DB_MT			"leveldb.database"
+#define LUALEVELDB_STATUS_MT		"leveldb.status"
+#define LUALEVELDB_ITER_MT			"leveldb.iterator"
+#define LUALEVELDB_BATCH_MT			"leveldb.batch"
 
 using namespace std;
 using namespace leveldb;
@@ -35,7 +35,7 @@ static int lvldb_f_open(lua_State *L) {
 	options.create_if_missing = true;
 	options.error_if_exists = false;
 
-	Status s = leveldb::DB::Open(options, filename, &db);
+	Status s = DB::Open(options, filename, &db);
 
 	if (!s.ok())
 		cerr << "LvlDB_f_open: Error opening creating database: " << s.ToString() << endl;
@@ -126,20 +126,22 @@ static int lvldb_db_iterator(lua_State *L) {
 	DB *db = check_leveldb(L);
 
 	Iterator *it = db->NewIterator(ReadOptions());
-
 	lua_pushlightuserdata(L, it);
+
+	luaL_getmetatable(L, LUALEVELDB_ITER_MT);
+	lua_setmetatable(L, -2);
 
 	return 1;
 }
 
 // TODO: test this method
 static int lvldb_db_batch(lua_State *L) {
-	DB *db = check_leveldb(L);
 
-	if(db != NULL) {
-		WriteBatch *batch;
-		lua_pushlightuserdata(L, batch);
-	}
+	WriteBatch *batch = (WriteBatch *)lua_newuserdata(L, sizeof(WriteBatch *));
+	lua_pushlightuserdata(L, batch);
+
+	luaL_getmetatable(L, LUALEVELDB_BATCH_MT);
+	lua_setmetatable(L, -2);
 
 	return 1;
 }
@@ -317,16 +319,16 @@ static const struct luaL_reg leveldb_m_iter [] = {
 // procedure for adding a library
 static void add_lib(lua_State *L, const char *metatable, const struct luaL_reg lib []) {
 
-	// let's build the function meta-table
+	// let's build the function metatable
 	luaL_newmetatable(L, metatable);
 
-	// meta-table already in the stack
+	// metatable already in the stack
 	lua_pushstring(L, "__index");
 
-	lua_pushvalue(L, -2); // push the meta-table
-	lua_settable(L, -3); // meta-table.__index = meta-table
+	lua_pushvalue(L, -2); // push the metatable
+	lua_settable(L, -3); // metatable.__index = metatable
 
-	// function table already on the stack
+	// metatable already on the stack
 	luaL_openlib(L, NULL, lib, 0);
 }
 
@@ -347,9 +349,9 @@ int luaopen_leveldb(lua_State *L) {
 
 	// adding database, status, iterator, batch methods
 	add_lib(L, LUALEVELDB_DB_MT, leveldb_m_db);
-	add_lib(L, LUALEVELDB_STATUS_MT, leveldb_m_status);
+	//add_lib(L, LUALEVELDB_STATUS_MT, leveldb_m_status);
 	add_lib(L, LUALEVELDB_ITER_MT, leveldb_m_iter);
-	add_lib(L, LUALEVELDB_BATCH_MT, leveldb_m_btch);
+	//add_lib(L, LUALEVELDB_BATCH_MT, leveldb_m_btch);
 
 	// static functions registered on library
 	luaL_openlib(L, LUALEVELDB_FN, leveldb_f, 0);
