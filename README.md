@@ -22,7 +22,10 @@ This is a simple example on how to use the lua extension for Google's leveldb:
 	local opt = leveldb.options();
 	opt.createIfMissing = true
 	opt.errorIfExists = false
-	
+
+	local ropt = leveldb.readOptions();
+	local wopt = leveldb.writeOptions();
+
 	local test_key = 'key1'
 	local test_val = 'value1'
 
@@ -31,10 +34,9 @@ This is a simple example on how to use the lua extension for Google's leveldb:
 
 	if leveldb.check(testdb)
 	then
-
-		if testdb:put(test_key, test_val)
+		if testdb:put(wopt, test_key, test_val)
 		then
-			print ("Getting test " .. test_key .. " : " .. testdb:get(test_key))
+			print ("Getting test " .. test_key .. " : " .. testdb:get(ropt, test_key))
 		end
 	end
 

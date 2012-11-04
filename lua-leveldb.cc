@@ -219,27 +219,17 @@ static Options *check_options(lua_State *L, int index) {
 }
 
 static ReadOptions *check_read_options(lua_State *L, int index) {
-	ReadOptions *ropt;
-	luaL_checktype(L, 1, LUA_TUSERDATA);
+	void *ud = luaL_checkudata(L, index, LVLDB_MT_ROPT);
+	luaL_argcheck(L, ud != NULL, index, "'writeOptions' expected");
 
-	ropt = (ReadOptions*)luaL_checkudata(L, index, LVLDB_MT_ROPT);
-
-	if(ropt == NULL)
-		luaL_typerror(L, index, LVLDB_MT_ROPT);
-
-	return ropt;
+	return (ReadOptions *) ud;
 }
 
 static WriteOptions *check_write_options(lua_State *L, int index) {
-	WriteOptions *wopt;
-	luaL_checktype(L, 1, LUA_TUSERDATA);
+	void *ud = luaL_checkudata(L, index, LVLDB_MT_WOPT);
+	luaL_argcheck(L, ud != NULL, index, "'readOptions' expected");
 
-	wopt = (WriteOptions*)luaL_checkudata(L, index, LVLDB_MT_WOPT);
-
-	if(wopt == NULL)
-		luaL_typerror(L, index, LVLDB_MT_WOPT);
-
-	return wopt;
+	return (WriteOptions *) ud;
 }
 
 static WriteBatch *check_writebatch(lua_State *L, int index) {
@@ -373,7 +363,6 @@ static int lvldb_batch(lua_State *L) {
 static int lvldb_check(lua_State *L) {
 	DB *db = (DB*) lua_touserdata(L, 1);
 
-	cout << "lvldb_check: checking database instance.\n";
 	lua_pushboolean(L, db != NULL ? true : false);
 
 	return 1;
@@ -382,15 +371,18 @@ static int lvldb_check(lua_State *L) {
 static int lvldb_database_put(lua_State *L) {
 	DB *db = check_database(L, 1);
 
-	string key = luaL_checkstring(L, 2);
-	string value = luaL_checkstring(L, 3);
+	WriteOptions wopt = *(check_write_options(L, 2));
+	string key = luaL_checkstring(L, 3);
+	string value = luaL_checkstring(L, 4);
 
-	Status s = db->Put(WriteOptions(), key, value);
+	Status s = db->Put(wopt, key, value);
 
-	if (s.ok()) {
+	if (s.ok())
 		lua_pushboolean(L, true);
-	} else {
+	else {
 		cerr << "Error putting value key: " << key << " with value " << value << endl;
+		cerr << s.ToString() << endl;
+		lua_pushboolean(L, false);
 	}
 
 	return 1;
@@ -399,15 +391,36 @@ static int lvldb_database_put(lua_State *L) {
 static int lvldb_database_get(lua_State *L) {
 	DB *db = check_database(L, 1);
 
-	string key = luaL_checkstring(L, 2);
+	ReadOptions ropt = *(check_read_options(L, 2));
+	string key = luaL_checkstring(L, 3);
 	string value;
 
-	Status s = db->Get(ReadOptions(), key, &value);
+	Status s = db->Get(ropt, key, &value);
 
-	if (s.ok()) {
+	if (s.ok())
 		lua_pushstring(L, value.c_str());
-	} else {
+	else {
 		cerr << "Error getting value with key: " << key << endl;
+		cerr << s.ToString() << endl;
+		lua_pushboolean(L, false);
+	}
+
+	return 1;
+}
+
+static int lvldb_database_del(lua_State *L) {
+	DB *db = check_database(L, 1);
+
+	WriteOptions wopt = *(check_write_options(L, 2));
+	string key = lua_tostring(L, 3);
+
+	Status s = db->Delete(wopt, key);
+
+	if (s.ok())
+		lua_pushboolean(L, true);
+	else {
+		cerr << "Error deleting ~ with key: " << key << endl;
+		cerr << s.ToString() << endl;
 		lua_pushboolean(L, false);
 	}
 
@@ -555,6 +568,7 @@ static const Xet_reg_pre write_options_setters[] = {
 static const luaL_reg lvldb_database_m[] = {
 		{ "put", lvldb_database_put },
 		{ "get", lvldb_database_get },
+		{ "delete", lvldb_database_del },
 		{ "write", lvldb_database_write },
 		{ "snapshot", lvldb_database_snapshot },
 		{ 0, 0 }
