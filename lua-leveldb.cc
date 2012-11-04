@@ -1,7 +1,9 @@
 #include <iostream>
+#include <sstream>
 
 // leveldb
 #include <leveldb/db.h>
+#include <leveldb/options.h>
 
 // leveldb atomic operation library
 #include <leveldb/write_batch.h>
@@ -12,6 +14,8 @@
 
 #define LVLDB_MOD_NAME		"leveldb"
 #define LVLDB_MT_OPT		"leveldb.opt"
+#define LVLDB_MT_ROPT		"leveldb.ropt"
+#define LVLDB_MT_WOPT		"leveldb.wopt"
 #define LVLDB_MT_DB			"leveldb.db"
 #define LVLDB_MT_BATCH		"leveldb.btch"
 
@@ -23,6 +27,9 @@ extern "C" {
 
 }
 
+/**
+ * Basic setters and getters
+ */
 static int get_int(lua_State *L, void *v) {
 	lua_pushnumber(L, *(int*) v);
 	return 1;
@@ -33,6 +40,7 @@ static int set_int(lua_State *L, void *v) {
 	return 0;
 }
 
+/*
 static int get_number(lua_State *L, void *v) {
 	lua_pushnumber(L, *(lua_Number*) v);
 	return 1;
@@ -40,6 +48,17 @@ static int get_number(lua_State *L, void *v) {
 
 static int set_number(lua_State *L, void *v) {
 	*(lua_Number*) v = luaL_checknumber(L, 3);
+	return 0;
+}
+*/
+
+static int get_size(lua_State *L, void *v) {
+	lua_pushinteger(L, *(lua_Integer*) v);
+	return 1;
+}
+
+static int set_size(lua_State *L, void *v) {
+	*(lua_Integer*) v = luaL_checkinteger(L, 3);
 	return 0;
 }
 
@@ -53,10 +72,18 @@ static int set_bool(lua_State *L, void *v) {
 	return 0;
 }
 
+/*
 static int get_string(lua_State *L, void *v) {
 	lua_pushstring(L, (char*) v);
 	return 1;
 }
+
+//TODO test it
+static int set_string(lua_State *L, void *v) {
+	v = (char*)lua_tostring(L, 3);
+	return 0;
+}
+*/
 
 typedef int (*Xet_func)(lua_State *L, void *v);
 
@@ -169,6 +196,10 @@ static void init_metatable(lua_State *L, const char *metatable, const struct lua
 
 using namespace leveldb;
 
+static string bool_to_string(int boolean) {
+	return boolean == 1 ? "true" : "false";
+}
+
 static DB *check_database(lua_State *L, int index) {
 	void *ud = luaL_checkudata(L, 1, LVLDB_MT_DB);
 	luaL_argcheck(L, ud != NULL, 1, "'database' expected");
@@ -187,6 +218,30 @@ static Options *check_options(lua_State *L, int index) {
 	return opt;
 }
 
+static ReadOptions *check_read_options(lua_State *L, int index) {
+	ReadOptions *ropt;
+	luaL_checktype(L, 1, LUA_TUSERDATA);
+
+	ropt = (ReadOptions*)luaL_checkudata(L, index, LVLDB_MT_ROPT);
+
+	if(ropt == NULL)
+		luaL_typerror(L, index, LVLDB_MT_ROPT);
+
+	return ropt;
+}
+
+static WriteOptions *check_write_options(lua_State *L, int index) {
+	WriteOptions *wopt;
+	luaL_checktype(L, 1, LUA_TUSERDATA);
+
+	wopt = (WriteOptions*)luaL_checkudata(L, index, LVLDB_MT_WOPT);
+
+	if(wopt == NULL)
+		luaL_typerror(L, index, LVLDB_MT_WOPT);
+
+	return wopt;
+}
+
 static WriteBatch *check_writebatch(lua_State *L, int index) {
 	void *ud = luaL_checkudata(L, 1, LVLDB_MT_BATCH);
 	luaL_argcheck(L, ud != NULL, 1, "'batch' expected");
@@ -198,11 +253,6 @@ static int lvldb_open(lua_State *L) {
 	DB *db;
 	Options *opt = check_options(L, 1);
 	const char *filename = luaL_checkstring(L, 2);
-
-	cout << "Pointer: " << opt << endl;
-	cout << "Address: " << &opt << endl;
-
-	cout << "CreateIfMissing: " << opt->create_if_missing << endl;
 
 	Status s = DB::Open(*(opt), filename, &db);
 
@@ -230,15 +280,90 @@ static int lvldb_close(lua_State *L) {
 }
 
 static int lvldb_options(lua_State *L) {
-	(Options*)lua_newuserdata(L, sizeof(Options));
+	Options *optp = (Options*)lua_newuserdata(L, sizeof(Options));
+
+	*(optp) = Options(); // set default values
+
 	luaL_getmetatable(L, LVLDB_MT_OPT);
 	lua_setmetatable(L, -2);
 
 	return 1;
 }
 
+static int lvldb_options_tostring(lua_State *L) {
+	Options *opt = check_options(L, 1);
+
+	ostringstream oss (ostringstream::out);
+	oss << "Create if missing: " << bool_to_string(opt->create_if_missing) << endl;
+	oss << "Error if exists: " << bool_to_string(opt->error_if_exists) << endl;
+	oss << "Paranoid checks: " << bool_to_string(opt->paranoid_checks) << endl;
+	oss << "Environment: " << opt->env << endl;
+	oss << "Info log: " << opt->info_log << endl;
+	oss << "Write buffer size: " << opt->write_buffer_size << endl;
+	oss << "Max open files: " << opt->max_open_files << endl;
+	oss << "Block cache: " << opt->block_cache << endl;
+	oss << "Block size: " << opt->block_size << endl;
+	oss << "Block restart interval: " << opt->block_restart_interval << endl;
+
+	string compression = opt->compression == 1 ? "kSnappyCompression" : "None";
+	oss << "Compression: " << compression << endl;
+
+	oss << "Filter policy: " << opt->filter_policy << endl;
+
+	lua_pushstring(L, oss.str().c_str());
+
+	return 1;
+}
+
+static int lvldb_read_options(lua_State *L) {
+	ReadOptions *ropt = (ReadOptions*)lua_newuserdata(L, sizeof(ReadOptions));
+
+	*(ropt) = ReadOptions(); // set default values
+
+	luaL_getmetatable(L, LVLDB_MT_ROPT);
+	lua_setmetatable(L, -2);
+	return 1;
+}
+
+static int lvldb_read_options_tostring(lua_State *L) {
+	ReadOptions *ropt = check_read_options(L, 1);
+
+	ostringstream oss (ostringstream::out);
+	oss << "Verify checksum: " << bool_to_string(ropt->verify_checksums) << endl;
+	oss << "Fill cache: " << bool_to_string(ropt->fill_cache) << endl;
+	oss << "Snapshot: " << ropt->snapshot << endl;
+
+	lua_pushstring(L, oss.str().c_str());
+
+	return 1;
+}
+
+static int lvldb_write_options(lua_State *L) {
+	WriteOptions *wopt = (WriteOptions*)lua_newuserdata(L, sizeof(WriteOptions));
+
+	*(wopt) = WriteOptions(); // set default values
+
+	luaL_getmetatable(L, LVLDB_MT_WOPT);
+	lua_setmetatable(L, -2);
+	return 1;
+}
+
+static int lvldb_write_options_tostring(lua_State *L) {
+	WriteOptions *wopt = check_write_options(L, 1);
+
+	ostringstream oss (ostringstream::out);
+	oss << "Sync: " << bool_to_string(wopt->sync) << endl;
+
+	lua_pushstring(L, oss.str().c_str());
+
+	return 1;
+}
+
 static int lvldb_batch(lua_State *L) {
-	(WriteBatch*)lua_newuserdata(L, sizeof(WriteBatch));
+	WriteBatch batch; // initialization
+	WriteBatch *batchp = &batch; // store pointer
+
+	lua_pushlightuserdata(L, batchp);
 	luaL_getmetatable(L, LVLDB_MT_BATCH);
 	lua_setmetatable(L, -2);
 
@@ -257,8 +382,8 @@ static int lvldb_check(lua_State *L) {
 static int lvldb_database_put(lua_State *L) {
 	DB *db = check_database(L, 1);
 
-	string key = (const char*) lua_tostring(L, 2);
-	string value = (const char*) lua_tostring(L, 3);
+	string key = luaL_checkstring(L, 2);
+	string value = luaL_checkstring(L, 3);
 
 	Status s = db->Put(WriteOptions(), key, value);
 
@@ -274,7 +399,7 @@ static int lvldb_database_put(lua_State *L) {
 static int lvldb_database_get(lua_State *L) {
 	DB *db = check_database(L, 1);
 
-	string key = (const char*) luaL_checkstring(L, 2);
+	string key = luaL_checkstring(L, 2);
 	string value;
 
 	Status s = db->Get(ReadOptions(), key, &value);
@@ -289,12 +414,53 @@ static int lvldb_database_get(lua_State *L) {
 	return 1;
 }
 
+//TODO needs testing
+static int lvldb_database_write(lua_State *L) {
+	DB *db = check_database(L, 1);
+
+	WriteOptions wopt = *(check_write_options(L, 2));
+	WriteBatch batch = *(check_writebatch(L, 3));
+
+	Status s = db->Write(wopt, &batch);
+
+	return 0;
+}
+
+static int lvldb_database_snapshot(lua_State *L) {
+	DB *db = check_database(L, 1);
+
+	const Snapshot *snapshot = db->GetSnapshot();
+
+	lua_pushlightuserdata(L, (void*)snapshot);
+
+	return 1;
+}
+
 static int lvldb_batch_put(lua_State *L) {
 	WriteBatch batch = *(check_writebatch(L, 1));
-	const char *key = luaL_checkstring(L, 2);
-	const char *value = luaL_checkstring(L, 3);
+
+	string key = luaL_checkstring(L, 2);
+	string value = luaL_checkstring(L, 3);
 
 	batch.Put(key, value);
+
+	return 0;
+}
+
+static int lvldb_batch_del(lua_State *L) {
+	WriteBatch batch = *(check_writebatch(L, 1));
+
+	string key = luaL_checkstring(L, 2);
+
+	batch.Delete(key);
+
+	return 0;
+}
+
+static int lvldb_batch_clear(lua_State *L) {
+	WriteBatch batch = *(check_writebatch(L, 1));
+
+	batch.Clear();
 
 	return 0;
 }
@@ -306,18 +472,19 @@ static const luaL_reg lvldb_leveldb_m[] = {
 		{ "open", lvldb_open },
 		{ "close", lvldb_close },
 		{ "options", lvldb_options },
+		{ "readOptions", lvldb_read_options },
+		{ "writeOptions", lvldb_write_options },
 		{ "batch", lvldb_batch },
 		{ "check", lvldb_check },
 		{ 0, 0 }
 };
 
 static const luaL_reg lvldb_options_m[] = {
-		{ "create", NULL },
 		{ 0, 0 }
 };
 
 static const luaL_reg lvldb_options_meta[] = {
-		{ "__string", NULL },
+		{ "__tostring", lvldb_options_tostring },
 		{ 0, 0}
 };
 
@@ -326,7 +493,10 @@ static const Xet_reg_pre options_getters[] = {
 		{ "createIfMissing", get_bool, offsetof(Options, create_if_missing) },
 		{ "errorIfExists", get_bool, offsetof(Options, error_if_exists) },
 		{ "paranoidChecks", get_bool, offsetof(Options, paranoid_checks) },
-		{ "writeBufferSize", get_int, offsetof(Options, write_buffer_size) },
+		{ "writeBufferSize", get_size, offsetof(Options, write_buffer_size) },
+		{ "maxOpenFiles", get_int, offsetof(Options, max_open_files) },
+		{ "blockSize", get_size, offsetof(Options, block_size) },
+		{ "blockRestartInterval", get_int, offsetof(Options, block_restart_interval) },
 		{ 0, 0 }
 };
 
@@ -335,18 +505,65 @@ static const Xet_reg_pre options_setters[] = {
 		{ "createIfMissing", set_bool, offsetof(Options, create_if_missing) },
 		{ "errorIfExists", set_bool, offsetof(Options, error_if_exists) },
 		{ "paranoidChecks", set_bool, offsetof(Options, paranoid_checks) },
-		{ "writeBufferSize", set_int, offsetof(Options, write_buffer_size) },
+		{ "writeBufferSize", set_size, offsetof(Options, write_buffer_size) },
+		{ "maxOpenFiles", set_int, offsetof(Options, max_open_files) },
+		{ "blockSize", set_size, offsetof(Options, block_size) },
+		{ "blockRestartInterval", set_int, offsetof(Options, block_restart_interval) },
+		{ 0, 0 }
+};
+
+static const luaL_reg lvldb_read_options_m[] = {
+		{ 0, 0 }
+};
+
+static const luaL_reg lvldb_read_options_meta[] = {
+		{ "__tostring", lvldb_read_options_tostring },
+		{ 0, 0 }
+};
+
+static const Xet_reg_pre read_options_getters[] = {
+		{ "verifyChecksum", get_bool, offsetof(ReadOptions, verify_checksums) },
+		{ "fillCache", get_bool, offsetof(ReadOptions, fill_cache) },
+		{ 0, 0 }
+};
+
+static const Xet_reg_pre read_options_setters[] = {
+		{ "verifyChecksum", set_bool, offsetof(ReadOptions, verify_checksums) },
+		{ "fillCache", set_bool, offsetof(ReadOptions, fill_cache) },
+		{ 0, 0 }
+};
+
+static const luaL_reg lvldb_write_options_m[] = {
+		{ 0, 0 }
+};
+
+static const luaL_reg lvldb_write_options_meta[] = {
+		{ "__tostring", lvldb_write_options_tostring },
+		{ 0, 0 }
+};
+
+static const Xet_reg_pre write_options_getters[] = {
+		{ "sync", get_bool, offsetof(WriteOptions, sync) },
+		{ 0, 0 }
+};
+
+static const Xet_reg_pre write_options_setters[] = {
+		{ "sync", set_bool, offsetof(WriteOptions, sync) },
 		{ 0, 0 }
 };
 
 static const luaL_reg lvldb_database_m[] = {
 		{ "put", lvldb_database_put },
 		{ "get", lvldb_database_get },
+		{ "write", lvldb_database_write },
+		{ "snapshot", lvldb_database_snapshot },
 		{ 0, 0 }
 };
 
 static const luaL_reg lvldb_batch_m[] = {
 		{ "put", lvldb_batch_put },
+		{ "delete", lvldb_batch_del },
+		{ "clear", lvldb_batch_clear },
 		{ 0, 0 }
 };
 
@@ -371,6 +588,8 @@ LUALIB_API int luaopen_leveldb(lua_State *L) {
 
 	init_metatable(L, LVLDB_MT_DB, lvldb_database_m);
 	init_complex_metatable(L, LVLDB_MT_OPT, lvldb_options_m, lvldb_options_meta, options_getters, options_setters);
+	init_complex_metatable(L, LVLDB_MT_ROPT, lvldb_read_options_m, lvldb_read_options_meta, read_options_getters, read_options_setters);
+	init_complex_metatable(L, LVLDB_MT_WOPT, lvldb_write_options_m, lvldb_write_options_meta, write_options_getters, write_options_setters);
 	init_metatable(L, LVLDB_MT_BATCH, lvldb_batch_m);
 
 	return 0;

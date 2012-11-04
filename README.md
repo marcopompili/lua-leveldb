@@ -17,13 +17,17 @@ This is a simple example on how to use the lua extension for Google's leveldb:
 
 	package.cpath = package.cpath .. ';./lib/?.so'
 
-	require 'lua-leveldb'
+	require 'leveldb'
 
+	local opt = leveldb.options();
+	opt.createIfMissing = true
+	opt.errorIfExists = false
+	
 	local test_key = 'key1'
 	local test_val = 'value1'
 
 	print ('opening test.db')
-	local testdb = leveldb.open ('test.db')
+	local testdb = leveldb.open (opt, 'test.db')
 
 	if leveldb.check(testdb)
 	then
