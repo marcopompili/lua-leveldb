@@ -9,11 +9,21 @@ The keys are ordered within the key value store according to a user-specified co
 
 I wrote an extension because i needed a fast embeddable key/value database to use it with WireShark for packet analysis.
 I needed to analyze some big pcap files and divide the traffic using some given rules.
-So i wrote this basic lua extension to access leveldb functions directly from lua that's used as extension language for wireshark.
+So i wrote this basic lua extension to access Leveldb functions directly from lua that's used as extension language for WireShark.
 
-Most of the basic options and functions are supported right now, but still not the full set of operations permitted by leveldb.
+Most of the basic options and functions are supported right now, but still not the full set of operations permitted by Leveldb.
 
-Usage Example
+Support
+-----
+The extension still not support the full set of operations permitted by the C++ library.
+This is what is on business:  
+  * Basic open/close/repair database operations supported.  
+  * Basic database write, read and delete operations.
+  * Partial access to most important options settings is supported.
+  * Iterators with seek and iteration operations are supported.
+  * Atomic batch updates supported.
+
+Basic Example
 -----
 This is a simple example on how to use the lua extension for Google's leveldb:
 
@@ -45,11 +55,35 @@ end
 
 leveldb.close(testdb)
 ```
-	
-Support
+
+Iterator Example
 -----
-For now options, read options, write options, iterator and batch atomic updates are supported.
-  * Basic database write, read and delete operations.
-  * Partial access to most important options settings is supported.
-  * Iterators with seek and iteration operations are supported.
-  * Atomic batch updates supported.
+```lua
+package.cpath = package.cpath .. ';./lib/?.so'
+
+require 'leveldb'
+
+local opt = leveldb.options()
+opt.createIfMissing = true
+opt.errorIfExists = false
+
+local db = leveldb.open(opt, 'iterator.db')
+
+local ropt = leveldb.readOptions()
+local wopt = leveldb.writeOptions()
+
+db:put(wopt, 'key1', 'value1')
+db:put(wopt, 'key2', 'value2')
+db:put(wopt, 'key3', 'value3')
+
+local iter = db:iterator(ropt)
+
+iter:seekToFirst()
+
+while(iter:valid())
+do
+	print(iter:key() .. ' ' .. iter:value())
+	
+	iter:next() -- go next
+end
+```
