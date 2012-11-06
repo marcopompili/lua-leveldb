@@ -717,7 +717,7 @@ static const luaL_reg lvldb_batch_m[] = {
 
 extern "C" {
 
-LUALIB_API int luaopen_leveldb(lua_State *L) {
+LUALIB_API int luaopen_liblualeveldb(lua_State *L) {
 	// register module
 	luaL_register(L, LVLDB_MOD_NAME, E);
 
