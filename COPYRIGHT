@@ -1,15 +1,15 @@
-lua-hiredis bindings license
+lua-leveldb bindings license
 ----------------------------
 
-lua-hiredis bindings module code is licensed under the terms of the MIT license
-reproduced below. This means that lua-hiredis is free software and can be used
+lua-leveldb bindings module code is licensed under the terms of the MIT license
+reproduced below. This means that lua-leveldb is free software and can be used
 for both academic and commercial purposes at absolutely no cost.
 
-Note that hiredis library itself (included for convenience) is licensed under BSD.
+Note that leveldb library itself (included for convenience) is licensed under BSD.
 
 ===============================================================================
 
-Copyright (C) 2011—2012 lua-hiredis bindings authors
+Copyright (C) 2011—2012 lua-leveldb bindings authors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

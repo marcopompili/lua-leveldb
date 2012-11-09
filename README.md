@@ -1,7 +1,7 @@
 lua-leveldb
 ===========
 
-Leveldb extension for Lua.
+Lua bindings for google's leveldb key/store database.
 
 From the googlecode page:
 "The leveldb library provides a persistent key value store. Keys and values are arbitrary byte arrays.
@@ -28,8 +28,6 @@ Basic Example
 This is a simple example on how to use the lua extension for Google's leveldb:
 
 ```lua
-package.cpath = package.cpath .. ';./lib/?.so'
-
 require 'leveldb'
 
 local opt = leveldb.options()
@@ -59,8 +57,6 @@ leveldb.close(testdb)
 Iterator Example
 -----
 ```lua
-package.cpath = package.cpath .. ';./lib/?.so'
-
 require 'leveldb'
 
 local opt = leveldb.options()

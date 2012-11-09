@@ -9,17 +9,19 @@
 // leveldb atomic operation library
 #include <leveldb/write_batch.h>
 
-#define LUALEVELDB_VERSION				"lua-leveldb 0.2.0"
-#define LUALEVELDB_COPYRIGHT			"Copyright (C) 2012, lua-leveldb by Marco Pompili (marcs.pompili@gmail.com)."
-#define LUALEVELDB_DESCRIPTION			"Bindings for Google's leveldb library."
+#include "config.h"
 
-#define LVLDB_MOD_NAME					"leveldb"
-#define LVLDB_MT_OPT					"leveldb.opt"
-#define LVLDB_MT_ROPT					"leveldb.ropt"
-#define LVLDB_MT_WOPT					"leveldb.wopt"
-#define LVLDB_MT_DB						"leveldb.db"
-#define LVLDB_MT_ITER					"leveldb.iter"
-#define LVLDB_MT_BATCH					"leveldb.btch"
+#define LUALEVELDB_VERSION		"lua-leveldb 0.2.0"
+#define LUALEVELDB_COPYRIGHT		"Copyright (C) 2012, lua-leveldb by Marco Pompili (marcs.pompili@gmail.com)."
+#define LUALEVELDB_DESCRIPTION		"Bindings for Google's leveldb library."
+
+#define LVLDB_MOD_NAME			"leveldb"
+#define LVLDB_MT_OPT			"leveldb.opt"
+#define LVLDB_MT_ROPT			"leveldb.ropt"
+#define LVLDB_MT_WOPT			"leveldb.wopt"
+#define LVLDB_MT_DB			"leveldb.db"
+#define LVLDB_MT_ITER			"leveldb.iter"
+#define LVLDB_MT_BATCH			"leveldb.btch"
 
 extern "C" {
 
@@ -307,7 +309,9 @@ static int lvldb_options_tostring(lua_State *L) {
 	string compression = opt->compression == 1 ? "kSnappyCompression" : "None";
 	oss << "Compression: " << compression << endl;
 
-	oss << "Filter policy: " << opt->filter_policy << endl;
+	#ifdef LEVELDB_FILTER_POLICY_H
+		oss << "Filter policy: " << opt->filter_policy << endl;
+	#endif
 
 	lua_pushstring(L, oss.str().c_str());
 
