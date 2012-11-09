@@ -1,25 +1,24 @@
-CC = g++
-RM = rm -rf
+CXX = g++
+CFLAGS =
+CXXFLAGS = -Wall -fPIC
 LIBFLAG = -shared
+LDFLAGS = -lleveldb -lsnappy -lpthread
 
-LIBLEVELDB_DIR = /usr/local
-LIBLEVELDB_INCDIR = $(LIBLEVELDB_DIR)/include
-LIBLEVELDB_LIBDIR = $(LIBLEVELDB_DIR)/lib
-
-LUA_DIR = /usr/lib
-LUA_LIBDIR = $(LUA_DIR)/lua/5.1
-LUA_INCDIR = /usr/include/lua5.1
+LUA_DIR=/usr/local
+LUA_LIBDIR=$(LUA_DIR)/lib/lua/5.1
+LUA_INCDIR=/usr/include/lua5.1
+LUA_SHAREDIR=$(LUA_DIR)/share/lua/5.1
 
 all: leveldb.so
 
 leveldb.so:
-	@echo 'Building target: $@'
-	$(CC) -Wall ${LIBFLAG} -fPIC -I${LUA_INCDIR} -lleveldb -lsnappy -lpthread -o leveldb.so src/lua-leveldb.cc
-	
+	@echo -e '\033[0;34mBuilding target: $@\033[0m'
+	$(CXX) src/lua-leveldb.cc $(CXXFLAGS) $(LIBFLAG) -I$(LUA_INCDIR) $(LDFLAGS) -o leveldb.so
+
 clean:
-	@echo 'Cleaning binaries:'
-	rm src/config.h
-	rm leveldb.so
-	
+	@echo -e '\033[0;33mCleaning binaries:\033[0m'
+	rm -f src/config.h
+	rm -f leveldb.so
+
 install:
-	@echo 'Installing from luarocks'
+	@echo -e '\033[0;32mInstalling with luarocks\033[0m'

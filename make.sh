@@ -12,6 +12,8 @@ then
 	rm -f $CONFIG_HEADER
 fi
 
+touch $CONFIG_HEADER
+
 echo -e "\033[0;32mlua-leveldb $VERSION-$REVISION\033[0m"
 echo "Configuring:"
 echo -ne "  *filter_policy.h header found: "
@@ -23,7 +25,5 @@ then
 else
 	echo -e "\033[0;31mno\033[0m"
 fi
-
-g++ -Wall -shared -fPIC -llua -lleveldb -lsnappy -lpthread -o leveldb.so src/lua-leveldb.cc
 
 luarocks make rockspec/lua-leveldb-$VERSION-$REVISION.rockspec
