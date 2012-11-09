@@ -437,11 +437,34 @@ static int lvldb_database_get(lua_State *L) {
 	return 1;
 }
 
+static int lvldb_database_set(lua_State *L) {
+	DB *db = check_database(L, 1);
+	string value = luaL_checkstring(L, 2);
+	unsigned int i = 0;
+	
+	Iterator *it = db->NewIterator(ReadOptions());
+
+	for (it->SeekToFirst(); it->Valid(); it->Next()) {
+		cout << i;
+		if (value != it->value().ToString()) {
+			Slice key((char*)&i, sizeof(int));
+			db->Put(WriteOptions(), key, value);
+		}
+		i++;
+	}
+
+	assert(it->status().ok());
+
+	delete it;
+
+	return 0;
+}
+
 static int lvldb_database_del(lua_State *L) {
 	DB *db = check_database(L, 1);
 
 	WriteOptions wopt = *(check_write_options(L, 2));
-	string key = lua_tostring(L, 3);
+	string key = luaL_checkstring(L, 3);
 
 	Status s = db->Delete(wopt, key);
 
@@ -488,6 +511,24 @@ static int lvldb_database_snapshot(lua_State *L) {
 
 	lua_pushlightuserdata(L, (void*)snapshot);
 
+	return 1;
+}
+
+static int lvldb_database_tostring(lua_State *L) {
+	DB *db = check_database(L, 1);
+	ostringstream oss (ostringstream::out);
+
+	Iterator* it = db->NewIterator(ReadOptions());
+
+	for (it->SeekToFirst(); it->Valid(); it->Next())
+		oss << it->key().ToString() << ": "  << it->value().ToString() << endl;
+	
+	assert(it->status().ok());
+	
+	delete it;
+	
+	lua_pushstring(L, oss.str().c_str());
+	
 	return 1;
 }
 
@@ -689,7 +730,9 @@ static const Xet_reg_pre write_options_setters[] = {
 
 // database methods
 static const luaL_reg lvldb_database_m[] = {
+		{ "__tostring", lvldb_database_tostring },
 		{ "put", lvldb_database_put },
+		{ "set", lvldb_database_set },
 		{ "get", lvldb_database_get },
 		{ "delete", lvldb_database_del },
 		{ "iterator", lvldb_database_iterator },
