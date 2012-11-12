@@ -14,6 +14,7 @@
 #define LUALEVELDB_VERSION		"lua-leveldb 0.2.0"
 #define LUALEVELDB_COPYRIGHT		"Copyright (C) 2012, lua-leveldb by Marco Pompili (marcs.pompili@gmail.com)."
 #define LUALEVELDB_DESCRIPTION		"Bindings for Google's leveldb library."
+#define LUALEVELDB_LOGMODE			0
 
 #define LVLDB_MOD_NAME			"leveldb"
 #define LVLDB_MT_OPT			"leveldb.opt"
@@ -77,6 +78,7 @@ static int set_bool(lua_State *L, void *v) {
 }
 
 /*
+//TODO test it
 static int get_string(lua_State *L, void *v) {
 	lua_pushstring(L, (char*) v);
 	return 1;
@@ -451,14 +453,15 @@ static int lvldb_database_get(lua_State *L) {
 static int lvldb_database_set(lua_State *L) {
 	DB *db = check_database(L, 1);
 	string value = luaL_checkstring(L, 2);
-	unsigned int i = 0;
+	unsigned double i = 0;
 	
 	Iterator *it = db->NewIterator(lvldb_ropt(L, 3));
 
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {
 		cout << i;
 		if (value != it->value().ToString()) {
-			Slice key((char*)&i, sizeof(int));
+			char *id_str;
+			Slice key = Slice(lua_number2str(id_str, i));
 			Status s = db->Put(WriteOptions(), key, value);
 
 			assert(s.ok());
@@ -529,8 +532,12 @@ static int lvldb_database_tostring(lua_State *L) {
 
 	Iterator* it = db->NewIterator(ReadOptions());
 
-	for (it->SeekToFirst(); it->Valid(); it->Next())
-		oss << it->key().ToString() << ": "  << it->value().ToString() << endl;
+	for (it->SeekToFirst(); it->Valid(); it->Next()) {
+		oss << it->key().ToString() << " -> "  << it->value().ToString() << endl;
+		#ifdef LUALEVELDB_LOGMODE
+			cout << "LOG: " << it->key().ToString() << " -> "  << it->value().ToString() << endl;
+		#endif
+	}
 	
 	assert(it->status().ok());
 	
