@@ -22,6 +22,7 @@ This is what is on business:
   * Partial access to most important options settings is supported.
   * Iterators with seek and iteration operations are supported.
   * Atomic batch updates supported.
+  * Experimental support for unique values.
 
 Basic Example
 -----
@@ -34,9 +35,6 @@ local opt = leveldb.options()
 opt.createIfMissing = true
 opt.errorIfExists = false
 
-local ropt = leveldb.readOptions()
-local wopt = leveldb.writeOptions()
-
 local test_key = 'key1'
 local test_val = 'value1'
 
@@ -45,9 +43,9 @@ local testdb = leveldb.open (opt, 'test.db')
 
 if leveldb.check(testdb)
 then
-	if testdb:put(wopt, test_key, test_val)
+	if testdb:put(test_key, test_val)
 	then
-		print ("Getting test " .. test_key .. " : " .. testdb:get(ropt, test_key))
+		print ("Getting test " .. test_key .. " : " .. testdb:get(test_key))
 	end
 end
 
@@ -63,14 +61,11 @@ local opt = leveldb.options()
 opt.createIfMissing = true
 opt.errorIfExists = false
 
-local db = leveldb.open(opt, 'iterator.db')
+local db = leveldb.open(opt, 'test.db')
 
-local ropt = leveldb.readOptions()
-local wopt = leveldb.writeOptions()
-
-db:put(wopt, 'key1', 'value1')
-db:put(wopt, 'key2', 'value2')
-db:put(wopt, 'key3', 'value3')
+db:put('key1', 'value1')
+db:put('key2', 'value2')
+db:put('key3', 'value3')
 
 local iter = db:iterator(ropt)
 

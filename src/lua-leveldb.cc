@@ -200,6 +200,20 @@ static void init_metatable(lua_State *L, const char *metatable, const struct lua
 
 using namespace leveldb;
 
+static Slice lua_param_to_slice(lua_State *L, int i) {
+	if(lua_isnumber(L, i)) {
+		lua_Number lua_number = lua_tonumber(L, i);
+		char *lua_number_str;
+		lua_number2str(lua_number_str, lua_number);
+		return Slice((const char*) lua_number_str);
+	}
+	else if(lua_isstring(L, i))
+		return Slice(lua_tostring(L, i));
+	else {
+		return NULL;
+	}
+}
+
 static string bool_to_string(int boolean) {
 	return boolean == 1 ? "true" : "false";
 }
@@ -250,6 +264,10 @@ static WriteBatch *check_writebatch(lua_State *L, int index) {
 	return (WriteBatch *) ud;
 }
 
+#define lvldb_opt(L, l) ( lua_gettop(L) >= l ? *(check_options(L, l)) : Options() )
+#define lvldb_ropt(L, l) ( lua_gettop(L) >= l ? *(check_read_options(L, l)) : ReadOptions() )
+#define lvldb_wopt(L, l) ( lua_gettop(L) >= l ? *(check_write_options(L, l)) : WriteOptions() )
+
 static int lvldb_open(lua_State *L) {
 	DB *db;
 	Options *opt = check_options(L, 1);
@@ -272,8 +290,6 @@ static int lvldb_open(lua_State *L) {
 
 static int lvldb_close(lua_State *L) {
 	DB *db = (DB*) lua_touserdata(L, 1);
-
-	cout << "lvldb_close: Closing DB!\n";
 
 	delete db;
 
@@ -383,9 +399,8 @@ static int lvldb_check(lua_State *L) {
 
 static int lvldb_repair(lua_State *L) {
 	string dbname = luaL_checkstring(L, 1);
-	Options opt = *(check_options(L, 2));
 
-	Status s = leveldb::RepairDB(dbname, opt);
+	Status s = leveldb::RepairDB(dbname, lvldb_opt(L, 2));
 
 	if(s.ok())
 		lua_pushboolean(L, true);
@@ -400,17 +415,15 @@ static int lvldb_repair(lua_State *L) {
 static int lvldb_database_put(lua_State *L) {
 	DB *db = check_database(L, 1);
 
-	WriteOptions wopt = *(check_write_options(L, 2));
-	Slice key = Slice(luaL_checkstring(L, 3));
-	string value = luaL_checkstring(L, 4);
+	Slice key = Slice(lua_param_to_slice(L, 2));
+	Slice value = Slice(lua_param_to_slice(L, 3));
 
-	Status s = db->Put(wopt, key, value);
+	Status s = db->Put(lvldb_wopt(L ,4), key, value);
 
 	if (s.ok())
 		lua_pushboolean(L, true);
 	else {
-		cerr << "Error putting value key: " << key.ToString() << " with value " << value << endl;
-		cerr << s.ToString() << endl;
+		cerr << "Error inserting key/value: " << s.ToString() << endl;
 		lua_pushboolean(L, false);
 	}
 
@@ -420,17 +433,15 @@ static int lvldb_database_put(lua_State *L) {
 static int lvldb_database_get(lua_State *L) {
 	DB *db = check_database(L, 1);
 
-	ReadOptions ropt = *(check_read_options(L, 2));
-	Slice key = Slice(luaL_checkstring(L, 3));
+	Slice key = Slice(lua_param_to_slice(L, 2));
 	string value;
 
-	Status s = db->Get(ropt, key, &value);
+	Status s = db->Get(lvldb_ropt(L, 3), key, &value);
 
 	if (s.ok())
 		lua_pushstring(L, value.c_str());
 	else {
-		cerr << "Error getting value with key: " << key.ToString() << endl;
-		cerr << s.ToString() << endl;
+		cerr << "Error getting value: " << s.ToString() << endl;
 		lua_pushboolean(L, false);
 	}
 
@@ -442,13 +453,15 @@ static int lvldb_database_set(lua_State *L) {
 	string value = luaL_checkstring(L, 2);
 	unsigned int i = 0;
 	
-	Iterator *it = db->NewIterator(ReadOptions());
+	Iterator *it = db->NewIterator(lvldb_ropt(L, 3));
 
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {
 		cout << i;
 		if (value != it->value().ToString()) {
 			Slice key((char*)&i, sizeof(int));
-			db->Put(WriteOptions(), key, value);
+			Status s = db->Put(WriteOptions(), key, value);
+
+			assert(s.ok());
 		}
 		i++;
 	}
@@ -463,16 +476,14 @@ static int lvldb_database_set(lua_State *L) {
 static int lvldb_database_del(lua_State *L) {
 	DB *db = check_database(L, 1);
 
-	WriteOptions wopt = *(check_write_options(L, 2));
-	string key = luaL_checkstring(L, 3);
+	Slice key = Slice(lua_param_to_slice(L, 2));
 
-	Status s = db->Delete(wopt, key);
+	Status s = db->Delete(lvldb_wopt(L, 3), key);
 
 	if (s.ok())
 		lua_pushboolean(L, true);
 	else {
-		cerr << "Error deleting ~ with key: " << key << endl;
-		cerr << s.ToString() << endl;
+		cerr << "Error deleting key/value entry: " << s.ToString() << endl;
 		lua_pushboolean(L, false);
 	}
 
@@ -481,9 +492,8 @@ static int lvldb_database_del(lua_State *L) {
 
 static int lvldb_database_iterator(lua_State *L) {
 	DB *db = check_database(L, 1);
-	ReadOptions ropt = *(check_read_options(L, 2));
 
-	Iterator *it = db->NewIterator(ropt);
+	Iterator *it = db->NewIterator(lvldb_ropt(L, 2));
 	lua_pushlightuserdata(L, it);
 
 	luaL_getmetatable(L, LVLDB_MT_ITER);
@@ -496,10 +506,9 @@ static int lvldb_database_iterator(lua_State *L) {
 static int lvldb_database_write(lua_State *L) {
 	DB *db = check_database(L, 1);
 
-	WriteOptions wopt = *(check_write_options(L, 2));
-	WriteBatch batch = *(check_writebatch(L, 3));
+	WriteBatch batch = *(check_writebatch(L, 2));
 
-	Status s = db->Write(wopt, &batch);
+	Status s = db->Write(lvldb_wopt(L, 3), &batch);
 
 	return 0;
 }
@@ -603,8 +612,8 @@ static int lvldb_batch_tostring(lua_State *L) {
 static int lvldb_batch_put(lua_State *L) {
 	WriteBatch batch = *(check_writebatch(L, 1));
 
-	Slice key = Slice(luaL_checkstring(L, 2));
-	Slice value = Slice(luaL_checkstring(L, 3));
+	Slice key = Slice(lua_param_to_slice(L, 2));
+	Slice value = Slice(lua_param_to_slice(L, 3));
 
 	batch.Put(key, value);
 
@@ -614,7 +623,7 @@ static int lvldb_batch_put(lua_State *L) {
 static int lvldb_batch_del(lua_State *L) {
 	WriteBatch batch = *(check_writebatch(L, 1));
 
-	Slice key = Slice(luaL_checkstring(L, 2));
+	Slice key = Slice(lua_param_to_slice(L, 2));
 
 	batch.Delete(key);
 
