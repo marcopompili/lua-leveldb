@@ -452,21 +452,36 @@ static int lvldb_database_get(lua_State *L) {
 
 static int lvldb_database_set(lua_State *L) {
 	DB *db = check_database(L, 1);
-	string value = luaL_checkstring(L, 2);
-	unsigned double i = 0;
-	
+	Slice value = lua_param_to_slice(L, 2);
+	int i = 1;
+	bool found = false;
+
 	Iterator *it = db->NewIterator(lvldb_ropt(L, 3));
 
-	for (it->SeekToFirst(); it->Valid(); it->Next()) {
-		cout << i;
-		if (value != it->value().ToString()) {
-			char *id_str;
-			Slice key = Slice(lua_number2str(id_str, i));
-			Status s = db->Put(WriteOptions(), key, value);
+	 /*
+	  *  initialization from the end, usually faster
+	  *  on the long run.
+	  */
+	it->SeekToLast();
 
-			assert(s.ok());
+	while(it->Valid()) {
+		if(value == it->value()) {
+			found = true;
+			break;
 		}
+		it->Prev();
 		i++;
+	}
+
+	if(!found) {
+		char *id_str;
+		long int m = 1000;
+		snprintf(id_str, m, "%i", i);
+
+		Slice key = Slice(id_str);
+		Status s = db->Put(WriteOptions(), key, value);
+
+		assert(s.ok());
 	}
 
 	assert(it->status().ok());
@@ -535,7 +550,7 @@ static int lvldb_database_tostring(lua_State *L) {
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {
 		oss << it->key().ToString() << " -> "  << it->value().ToString() << endl;
 		#ifdef LUALEVELDB_LOGMODE
-			cout << "LOG: " << it->key().ToString() << " -> "  << it->value().ToString() << endl;
+			//cout << "LOG: " << it->key().ToString() << " -> "  << it->value().ToString() << endl;
 		#endif
 	}
 	
