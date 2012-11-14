@@ -453,7 +453,13 @@ static int lvldb_database_get(lua_State *L) {
 static int lvldb_database_set(lua_State *L) {
 	DB *db = check_database(L, 1);
 	Slice value = lua_param_to_slice(L, 2);
-	int i = 1;
+
+	#ifdef __x86_64__ || __ppc64__
+		uint64_t i = 1;
+	#else
+		int i = 1;
+	#endif
+
 	bool found = false;
 
 	Iterator *it = db->NewIterator(lvldb_ropt(L, 3));
@@ -462,24 +468,23 @@ static int lvldb_database_set(lua_State *L) {
 	  *  initialization from the end, usually faster
 	  *  on the long run.
 	  */
-	it->SeekToLast();
-
-	while(it->Valid()) {
+	for(it->SeekToLast();it->Valid();it->Prev()) {
 		if(value == it->value()) {
 			found = true;
 			break;
 		}
-		it->Prev();
 		i++;
 	}
 
 	if(!found) {
 		char *id_str;
+		/*
 		long int m = 1000;
 		snprintf(id_str, m, "%i", i);
+		*/
 
 		Slice key = Slice(id_str);
-		Status s = db->Put(WriteOptions(), key, value);
+		Status s = db->Put(WriteOptions(), "0", value);
 
 		assert(s.ok());
 	}
