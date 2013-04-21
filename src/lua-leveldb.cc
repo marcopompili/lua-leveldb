@@ -11,24 +11,30 @@
 
 #include "config.h"
 
-#define LUALEVELDB_VERSION		"lua-leveldb 0.2.0"
-#define LUALEVELDB_COPYRIGHT		"Copyright (C) 2012, lua-leveldb by Marco Pompili (marcs.pompili@gmail.com)."
-#define LUALEVELDB_DESCRIPTION		"Bindings for Google's leveldb library."
-#define LUALEVELDB_LOGMODE			0
+#define LUALEVELDB_VERSION		"lua-leveldb 0.2.1"
+#define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012-13, lua-leveldb by Marco Pompili (marcs.pompili@gmail.com)."
+#define LUALEVELDB_DESCRIPTION	"Bindings for Google's leveldb library."
+#define LUALEVELDB_LOGMODE		0
 
-#define LVLDB_MOD_NAME			"leveldb"
-#define LVLDB_MT_OPT			"leveldb.opt"
-#define LVLDB_MT_ROPT			"leveldb.ropt"
-#define LVLDB_MT_WOPT			"leveldb.wopt"
+#define LVLDB_MOD_NAME		"leveldb"
+#define LVLDB_MT_OPT		"leveldb.opt"
+#define LVLDB_MT_ROPT		"leveldb.ropt"
+#define LVLDB_MT_WOPT		"leveldb.wopt"
 #define LVLDB_MT_DB			"leveldb.db"
-#define LVLDB_MT_ITER			"leveldb.iter"
-#define LVLDB_MT_BATCH			"leveldb.btch"
+#define LVLDB_MT_ITER		"leveldb.iter"
+#define LVLDB_MT_BATCH		"leveldb.btch"
 
 extern "C" {
 
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
+// Lua 5.1.5
+#include <lua5.1/lua.h>
+#include <lua5.1/lauxlib.h>
+#include <lua5.1/lualib.h>
+
+// Lua 5.2.2
+//#include <lua.h>
+//#include <lauxlib.h>
+//#include <lualib.h>
 
 }
 
@@ -58,7 +64,7 @@ static int set_number(lua_State *L, void *v) {
 */
 
 static int get_size(lua_State *L, void *v) {
-	lua_pushinteger(L, *(lua_Integer*) v);
+	//lua_pushinteger(L, *(lua_Integer*) v);
 	return 1;
 }
 
@@ -157,7 +163,7 @@ static int newindex_handler(lua_State *L) {
 static void init_complex_metatable(lua_State *L, const char *metatable_name, const luaL_reg methods[], const luaL_reg metamethods[], const Xet_reg_pre getters[], const Xet_reg_pre setters[]) {
 
 	// create methods table, & add it to the table of globals
-	luaL_openlib(L, metatable_name, methods, 0);
+	luaL_openlib(L, metatable_name, methods, 0); //5.1
 	int methods_stack = lua_gettop(L);
 
 	// create metatable for object, & add it to the registry
