@@ -1,21 +1,23 @@
 #include <iostream>
 #include <sstream>
 
-// leveldb
+// LevelDB headers
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
 
-// leveldb atomic operation library
+// LevelDB atomic operation header
 #include <leveldb/write_batch.h>
 
 #include "config.h"
 
-#define LUALEVELDB_VERSION		"lua-leveldb 0.2.1"
-#define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012-13, lua-leveldb by Marco Pompili (marcs.pompili@gmail.com)."
-#define LUALEVELDB_DESCRIPTION	"Bindings for Google's leveldb library."
+// Rock info
+#define LUALEVELDB_VERSION		"LUA-LevelDB 0.2.1"
+#define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012-13, LUA-LevelDB by Marco Pompili (marcs.pompili@gmail.com)."
+#define LUALEVELDB_DESCRIPTION	"Bindings for Google's LevelDB library."
 #define LUALEVELDB_LOGMODE		0
 
+// LUA Meta-tables names
 #define LVLDB_MOD_NAME		"leveldb"
 #define LVLDB_MT_OPT		"leveldb.opt"
 #define LVLDB_MT_ROPT		"leveldb.ropt"
@@ -26,12 +28,12 @@
 
 extern "C" {
 
-// Lua 5.1.5
+// LUA 5.1.5
 #include <lua5.1/lua.h>
 #include <lua5.1/lauxlib.h>
 #include <lua5.1/lualib.h>
 
-// Lua 5.2.2
+// LUA 5.2.2
 //#include <lua.h>
 //#include <lauxlib.h>
 //#include <lualib.h>
@@ -97,6 +99,9 @@ static int set_string(lua_State *L, void *v) {
 }
 */
 
+/**
+ * Utility functions.
+ */
 typedef int (*Xet_func)(lua_State *L, void *v);
 
 /* member info for get and set handlers */
@@ -226,6 +231,9 @@ static string bool_to_string(int boolean) {
 	return boolean == 1 ? "true" : "false";
 }
 
+/**
+ * Type checking functions.
+ */
 static DB *check_database(lua_State *L, int index) {
 	void *ud = luaL_checkudata(L, 1, LVLDB_MT_DB);
 	luaL_argcheck(L, ud != NULL, 1, "'database' expected");
@@ -276,6 +284,9 @@ static WriteBatch *check_writebatch(lua_State *L, int index) {
 #define lvldb_ropt(L, l) ( lua_gettop(L) >= l ? *(check_read_options(L, l)) : ReadOptions() )
 #define lvldb_wopt(L, l) ( lua_gettop(L) >= l ? *(check_write_options(L, l)) : WriteOptions() )
 
+/**
+ * Basic calls to LevelDB.
+ */
 static int lvldb_open(lua_State *L) {
 	DB *db;
 	Options *opt = check_options(L, 1);
@@ -519,6 +530,9 @@ static int lvldb_database_del(lua_State *L) {
 	return 1;
 }
 
+/**
+ * LevelDB iterator functions.
+ */
 static int lvldb_database_iterator(lua_State *L) {
 	DB *db = check_database(L, 1);
 
@@ -632,6 +646,9 @@ static int lvldb_iterator_value(lua_State *L) {
 	return 1;
 }
 
+/**
+ * LevelDB atomic batch support.
+ */
 static int lvldb_batch_tostring(lua_State *L) {
 	WriteBatch batch = *(check_writebatch(L, 1));
 
@@ -671,6 +688,9 @@ static int lvldb_batch_clear(lua_State *L) {
 	return 0;
 }
 
+/**
+ * Wrapping up the library.
+ */
 // empty
 static const struct luaL_reg E[] = { { NULL, NULL } };
 
@@ -692,7 +712,7 @@ static const luaL_reg lvldb_options_m[] = {
 		{ 0, 0 }
 };
 
-// options metamethods
+// options meta-methods
 static const luaL_reg lvldb_options_meta[] = {
 		{ "__tostring", lvldb_options_tostring },
 		{ 0, 0}
@@ -727,7 +747,7 @@ static const luaL_reg lvldb_read_options_m[] = {
 		{ 0, 0 }
 };
 
-// read options metamethods
+// read options meta-methods
 static const luaL_reg lvldb_read_options_meta[] = {
 		{ "__tostring", lvldb_read_options_tostring },
 		{ 0, 0 }
@@ -752,7 +772,7 @@ static const luaL_reg lvldb_write_options_m[] = {
 		{ 0, 0 }
 };
 
-// write options metamethods
+// write options meta-methods
 static const luaL_reg lvldb_write_options_meta[] = {
 		{ "__tostring", lvldb_write_options_tostring },
 		{ 0, 0 }
@@ -820,10 +840,10 @@ LUALIB_API int luaopen_leveldb(lua_State *L) {
 	lua_pushliteral(L, LUALEVELDB_DESCRIPTION);
 	lua_setfield(L, -2, "_DESCRIPTION");
 
-	// leveldb methods
+	// LevelDB methods
 	luaL_openlib(L, LVLDB_MOD_NAME, lvldb_leveldb_m, 0);
 
-	// initialize metatables
+	// initialize meta-tables
 	init_metatable(L, LVLDB_MT_DB, lvldb_database_m);
 	init_complex_metatable(L, LVLDB_MT_OPT, lvldb_options_m, lvldb_options_meta, options_getters, options_setters);
 	init_complex_metatable(L, LVLDB_MT_ROPT, lvldb_read_options_m, lvldb_read_options_meta, read_options_getters, read_options_setters);

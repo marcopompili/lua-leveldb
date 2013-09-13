@@ -1,0 +1,6 @@
+examples/*.db
+src/config.h
+*.o
+*.so
+.project
+.cproject

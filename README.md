@@ -13,6 +13,13 @@ So i wrote this basic lua extension to access Leveldb functions directly from lu
 
 Most of the basic options and functions are supported right now, but still not the full set of operations permitted by Leveldb.
 
+Installation
+-----
+The library is packed like a rock extension for lua. Check out luarocks (http://luarocks.org/).
+Before installing check that you got leveldb correctly installed for your linux distribution.
+To install execute make.sh as root, this script should build the library and install it as a "Rock".
+To remove the library us remove.sh to remove the package and delete the builded file.
+
 Support
 -----
 The extension still not support the full set of operations permitted by the C++ library.
