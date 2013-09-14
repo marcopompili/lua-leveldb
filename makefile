@@ -1,5 +1,5 @@
 CXX = g++
-CFLAGS =
+CFLAGS = 
 CXXFLAGS = -Wall -fPIC
 LIBFLAG = -shared
 LDFLAGS = -lleveldb -lsnappy -lpthread

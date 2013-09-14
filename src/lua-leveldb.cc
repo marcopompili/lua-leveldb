@@ -12,9 +12,9 @@
 #include "config.h"
 
 // Rock info
-#define LUALEVELDB_VERSION		"LUA-LevelDB 0.2.1"
+#define LUALEVELDB_VERSION		"LUA-LevelDB 0.3.0"
 #define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012-13, LUA-LevelDB by Marco Pompili (marcs.pompili@gmail.com)."
-#define LUALEVELDB_DESCRIPTION	"Bindings for Google's LevelDB library."
+#define LUALEVELDB_DESCRIPTION	"LUA bindings for Google's LevelDB library."
 #define LUALEVELDB_LOGMODE		0
 
 // LUA Meta-tables names
@@ -28,6 +28,8 @@
 
 extern "C" {
 
+#include <stdlib.h>
+
 // LUA 5.1.5
 #include <lua5.1/lua.h>
 #include <lua5.1/lauxlib.h>
@@ -38,10 +40,14 @@ extern "C" {
 //#include <lauxlib.h>
 //#include <lualib.h>
 
+#include "utils.h"
+
 }
 
 /**
  * Basic setters and getters
+ * -------------------------
+ * Used to set values in the Options
  */
 static int get_int(lua_State *L, void *v) {
 	lua_pushnumber(L, *(int*) v);
@@ -100,7 +106,8 @@ static int set_string(lua_State *L, void *v) {
 */
 
 /**
- * Utility functions.
+ * Utility functions
+ * -----------------
  */
 typedef int (*Xet_func)(lua_State *L, void *v);
 
@@ -171,14 +178,14 @@ static void init_complex_metatable(lua_State *L, const char *metatable_name, con
 	luaL_openlib(L, metatable_name, methods, 0); //5.1
 	int methods_stack = lua_gettop(L);
 
-	// create metatable for object, & add it to the registry
+	// create meta-table for object, & add it to the registry
 	luaL_newmetatable(L, metatable_name);
-	luaL_openlib(L, 0, metamethods, 0); // fill metatable
+	luaL_openlib(L, 0, metamethods, 0); // fill meta-table
 	int metatable_stack = lua_gettop(L);
 
 	lua_pushliteral(L, "__metatable");
-	lua_pushvalue(L, methods_stack); // dup methods table
-	lua_rawset(L, metatable_stack); // hide metatable
+	lua_pushvalue(L, methods_stack); // duplicate methods table
+	lua_rawset(L, metatable_stack); // hide meta-table
 
 	lua_pushliteral(L, "__index");
 	lua_pushvalue(L, metatable_stack);
@@ -196,35 +203,53 @@ static void init_complex_metatable(lua_State *L, const char *metatable_name, con
 	lua_pop(L, 1);
 }
 
-// procedure for adding a metatable into the stack
+/**
+ * Procedure for adding a meta-table into the stack.
+ */
 static void init_metatable(lua_State *L, const char *metatable, const struct luaL_reg lib[]) {
 
-	// let's build the function metatable
+	// let's build the function meta-table
 	if (luaL_newmetatable(L, metatable) == 0)
 		cerr << "Warning: metatable " << metatable << " is already set" << endl;
 
-	lua_pushstring(L, "__index"); // metatable already in the stack
-	lua_pushvalue(L, -2); // push the metatable
-	lua_settable(L, -3); // metatable.__index = metatable
+	lua_pushstring(L, "__index"); // meta-table already in the stack
+	lua_pushvalue(L, -2); // push the meta-table
+	lua_settable(L, -3); // meta-table.__index = meta-table
 
-	// metatable already on the stack
+	// meta-table already on the stack
 	luaL_openlib(L, NULL, lib, 0);
 }
 
 using namespace leveldb;
 
+/**
+ * Converts a LUA parameter into a LevelDB's slice.
+ * Every data stored from LUA is stored with this format.
+ * This functions manage type conversion between LUA's
+ * types and the LevelDB's Slice.
+ * ------------------------------------------------------
+ * Reminder: lua_isnumber returns 1 also if the data is a string
+ * convertible to a number.
+ */
 static Slice lua_param_to_slice(lua_State *L, int i) {
+
 	if(lua_isnumber(L, i)) {
-		lua_Number lua_number = lua_tonumber(L, i);
-		char *lua_number_str;
-		lua_number2str(lua_number_str, lua_number);
-		return Slice((const char*) lua_number_str);
+//		lua_Number lua_number;
+//		char lua_number_str[LUAI_MAXNUMBER2STR];
+//
+//		//unsigned char buf[sizeof lua_number] = {0};
+//		//double2bin(lua_number, buf);
+//
+//		lua_number = lua_tonumber(L, i);
+//		lua_number2str(lua_number_str, lua_number);
+//
+//		return Slice(lua_number_str);
+		return Slice(lua_tostring(L, i));
 	}
 	else if(lua_isstring(L, i))
 		return Slice(lua_tostring(L, i));
-	else {
+	else
 		return NULL;
-	}
 }
 
 static string bool_to_string(int boolean) {
@@ -232,7 +257,12 @@ static string bool_to_string(int boolean) {
 }
 
 /**
- * Type checking functions.
+ * Type checking functions
+ * -----------------------
+ */
+
+/**
+ *  Check for a DB type.
  */
 static DB *check_database(lua_State *L, int index) {
 	void *ud = luaL_checkudata(L, 1, LVLDB_MT_DB);
@@ -241,6 +271,9 @@ static DB *check_database(lua_State *L, int index) {
 	return (DB *) ud;
 }
 
+/**
+ * Check for an Options type.
+ */
 static Options *check_options(lua_State *L, int index) {
 	Options *opt;
 	luaL_checktype(L, 1, LUA_TUSERDATA);
@@ -252,6 +285,9 @@ static Options *check_options(lua_State *L, int index) {
 	return opt;
 }
 
+/**
+ * Check for a ReadOptions type.
+ */
 static ReadOptions *check_read_options(lua_State *L, int index) {
 	void *ud = luaL_checkudata(L, index, LVLDB_MT_ROPT);
 	luaL_argcheck(L, ud != NULL, index, "'writeOptions' expected");
@@ -259,6 +295,9 @@ static ReadOptions *check_read_options(lua_State *L, int index) {
 	return (ReadOptions *) ud;
 }
 
+/**
+ * Check for a WriteOptions type.
+ */
 static WriteOptions *check_write_options(lua_State *L, int index) {
 	void *ud = luaL_checkudata(L, index, LVLDB_MT_WOPT);
 	luaL_argcheck(L, ud != NULL, index, "'readOptions' expected");
@@ -266,6 +305,9 @@ static WriteOptions *check_write_options(lua_State *L, int index) {
 	return (WriteOptions *) ud;
 }
 
+/**
+ * Check for an Iterator type.
+ */
 static Iterator *check_iter(lua_State *L) {
 	void *ud = luaL_checkudata(L, 1, LVLDB_MT_ITER);
 	luaL_argcheck(L, ud != NULL, 1, "'iterator' expected");
@@ -273,6 +315,9 @@ static Iterator *check_iter(lua_State *L) {
 	return (Iterator *) ud;
 }
 
+/**
+ * Check for a WriteBatch type.
+ */
 static WriteBatch *check_writebatch(lua_State *L, int index) {
 	void *ud = luaL_checkudata(L, 1, LVLDB_MT_BATCH);
 	luaL_argcheck(L, ud != NULL, 1, "'batch' expected");
@@ -280,12 +325,20 @@ static WriteBatch *check_writebatch(lua_State *L, int index) {
 	return (WriteBatch *) ud;
 }
 
+/**
+ * Type checking macros.
+ */
 #define lvldb_opt(L, l) ( lua_gettop(L) >= l ? *(check_options(L, l)) : Options() )
 #define lvldb_ropt(L, l) ( lua_gettop(L) >= l ? *(check_read_options(L, l)) : ReadOptions() )
 #define lvldb_wopt(L, l) ( lua_gettop(L) >= l ? *(check_write_options(L, l)) : WriteOptions() )
 
 /**
- * Basic calls to LevelDB.
+ * Basic calls to LevelDB
+ * ----------------------
+ */
+
+/**
+ * Opens a DB connection, based on the given options and filename.
  */
 static int lvldb_open(lua_State *L) {
 	DB *db;
@@ -307,6 +360,9 @@ static int lvldb_open(lua_State *L) {
 	return 1;
 }
 
+/**
+ * Close an open DB instance.
+ */
 static int lvldb_close(lua_State *L) {
 	DB *db = (DB*) lua_touserdata(L, 1);
 
@@ -315,6 +371,9 @@ static int lvldb_close(lua_State *L) {
 	return 0;
 }
 
+/**
+ * Create an options object with the defaults values.
+ */
 static int lvldb_options(lua_State *L) {
 	Options *optp = (Options*)lua_newuserdata(L, sizeof(Options));
 
@@ -326,6 +385,9 @@ static int lvldb_options(lua_State *L) {
 	return 1;
 }
 
+/**
+ * To string for the options type.
+ */
 static int lvldb_options_tostring(lua_State *L) {
 	Options *opt = check_options(L, 1);
 
@@ -353,6 +415,9 @@ static int lvldb_options_tostring(lua_State *L) {
 	return 1;
 }
 
+/**
+ * Create a ReadOptions object.
+ */
 static int lvldb_read_options(lua_State *L) {
 	ReadOptions *ropt = (ReadOptions*)lua_newuserdata(L, sizeof(ReadOptions));
 
@@ -360,9 +425,13 @@ static int lvldb_read_options(lua_State *L) {
 
 	luaL_getmetatable(L, LVLDB_MT_ROPT);
 	lua_setmetatable(L, -2);
+
 	return 1;
 }
 
+/**
+ * To string function for the ReadOptions object.
+ */
 static int lvldb_read_options_tostring(lua_State *L) {
 	ReadOptions *ropt = check_read_options(L, 1);
 
@@ -376,6 +445,9 @@ static int lvldb_read_options_tostring(lua_State *L) {
 	return 1;
 }
 
+/**
+ * Create a WriteOptions object.
+ */
 static int lvldb_write_options(lua_State *L) {
 	WriteOptions *wopt = (WriteOptions*)lua_newuserdata(L, sizeof(WriteOptions));
 
@@ -383,9 +455,13 @@ static int lvldb_write_options(lua_State *L) {
 
 	luaL_getmetatable(L, LVLDB_MT_WOPT);
 	lua_setmetatable(L, -2);
+
 	return 1;
 }
 
+/**
+ * To string function for the WriteOptions object.
+ */
 static int lvldb_write_options_tostring(lua_State *L) {
 	WriteOptions *wopt = check_write_options(L, 1);
 
@@ -397,6 +473,9 @@ static int lvldb_write_options_tostring(lua_State *L) {
 	return 1;
 }
 
+/**
+ * Create a WriteBatch object.
+ */
 static int lvldb_batch(lua_State *L) {
 	WriteBatch batch; // initialization
 	WriteBatch *batchp = &batch; // store pointer
@@ -408,6 +487,9 @@ static int lvldb_batch(lua_State *L) {
 	return 1;
 }
 
+/**
+ * Check for DB basic consistency.
+ */
 static int lvldb_check(lua_State *L) {
 	DB *db = (DB*) lua_touserdata(L, 1);
 
@@ -416,6 +498,14 @@ static int lvldb_check(lua_State *L) {
 	return 1;
 }
 
+/**
+ * Try repair the DB with the name in input.
+ * -----------------------------------------
+ * From the LevelDB documentation:
+ * If a database is corrupted (perhaps it cannot be opened when
+ * paranoid checking is turned on), the leveldb::RepairDB function may
+ * be used to recover as much of the data as possible.
+ */
 static int lvldb_repair(lua_State *L) {
 	string dbname = luaL_checkstring(L, 1);
 
@@ -431,6 +521,22 @@ static int lvldb_repair(lua_State *L) {
 	return 1;
 }
 
+
+/**
+ * Data Operations
+ * ---------------
+ * Data operations are binded to a DB instance, the first parameter
+ * is always a DB but the notation used in LUA is db:put, db:get etc.
+ */
+
+/**
+ * Method that put a key,value into a DB.
+ * --------------------------------------$
+ * Inserts a key,value pair in the LevelDB Slice format.
+ * This DB related method returns in LUA:
+ *   * True in case of correct insertion.
+ *   * False in case of error.
+ */
 static int lvldb_database_put(lua_State *L) {
 	DB *db = check_database(L, 1);
 
@@ -449,18 +555,47 @@ static int lvldb_database_put(lua_State *L) {
 	return 1;
 }
 
+/**
+ * Method that get a value with the given key from a DB.
+ * -----------------------------------------------------$
+ * This DB related method returns in LUA:
+ *  * A string in case of success.
+ *  * False in case of error.
+ */
 static int lvldb_database_get(lua_State *L) {
 	DB *db = check_database(L, 1);
-
 	Slice key = Slice(lua_param_to_slice(L, 2));
-	string value;
 
+	string value;
 	Status s = db->Get(lvldb_ropt(L, 3), key, &value);
 
 	if (s.ok())
 		lua_pushstring(L, value.c_str());
 	else {
-		cerr << "Error getting value: " << s.ToString() << endl;
+		cerr << "Error getting value (get): " << s.ToString() << endl;
+		lua_pushboolean(L, false);
+	}
+
+	return 1;
+}
+
+//TODO test it
+static int lvldb_database_gett(lua_State *L) {
+	DB *db = check_database(L, 1);
+	Slice key = Slice(lua_param_to_slice(L, 2));
+
+	string value;
+	const char *type = luaL_optlstring(L, 3, STRTYPE, (size_t*)sizeof(STRTYPE));
+
+	Status s = db->Get(lvldb_ropt(L, 4), key, &value);
+
+	if (s.ok()) {
+		if(t_is_string(type))
+			lua_pushstring(L, value.c_str());
+		else if(t_is_number(type))
+			lua_pushnumber(L, slice2num(value.c_str()));
+	} else {
+		cerr << "Error getting value (gett): " << s.ToString() << endl;
 		lua_pushboolean(L, false);
 	}
 
@@ -471,7 +606,8 @@ static int lvldb_database_set(lua_State *L) {
 	DB *db = check_database(L, 1);
 	Slice value = lua_param_to_slice(L, 2);
 
-	#ifdef __x86_64__ || __ppc64__
+	// #ifdef __x86_64__ || __ppc64__
+	#ifdef __x86_64__
 		uint64_t i = 1;
 	#else
 		int i = 1;
@@ -494,13 +630,13 @@ static int lvldb_database_set(lua_State *L) {
 	}
 
 	if(!found) {
-		char *id_str;
-		/*
-		long int m = 1000;
-		snprintf(id_str, m, "%i", i);
-		*/
+//		char *id_str;
+//
+//		long int m = 1000;
+//		snprintf(id_str, m, "%i", i);
+//
+//		Slice key = Slice(id_str);
 
-		Slice key = Slice(id_str);
 		Status s = db->Put(WriteOptions(), "0", value);
 
 		assert(s.ok());
@@ -531,7 +667,12 @@ static int lvldb_database_del(lua_State *L) {
 }
 
 /**
- * LevelDB iterator functions.
+ * LevelDB iterator functions
+ * --------------------------
+ */
+
+/**
+ * Method that creates an iterator.
  */
 static int lvldb_database_iterator(lua_State *L) {
 	DB *db = check_database(L, 1);
@@ -545,7 +686,7 @@ static int lvldb_database_iterator(lua_State *L) {
 	return 1;
 }
 
-//TODO needs testing
+//TODO test it
 static int lvldb_database_write(lua_State *L) {
 	DB *db = check_database(L, 1);
 
@@ -556,6 +697,14 @@ static int lvldb_database_write(lua_State *L) {
 	return 0;
 }
 
+/**
+ * From the LevelDB documentation:
+ * Snapshots provide consistent read-only views over the entire
+ * state of the key-value store. ReadOptions::snapshot may be
+ * non-NULL to indicate that a read should operate on a particular
+ * version of the DB state. If ReadOptions::snapshot is NULL,
+ * the read will operate on an implicit snapshot of the current state.
+ */
 static int lvldb_database_snapshot(lua_State *L) {
 	DB *db = check_database(L, 1);
 
@@ -566,17 +715,34 @@ static int lvldb_database_snapshot(lua_State *L) {
 	return 1;
 }
 
+/**
+ * To string function for a DB.
+ * ----------------------------
+ * Not to use in production environments.
+ * Just prints the whole set of key,values from a DB.
+ */
 static int lvldb_database_tostring(lua_State *L) {
 	DB *db = check_database(L, 1);
 	ostringstream oss (ostringstream::out);
 
 	Iterator* it = db->NewIterator(ReadOptions());
 
-	for (it->SeekToFirst(); it->Valid(); it->Next()) {
-		oss << it->key().ToString() << " -> "  << it->value().ToString() << endl;
-		#ifdef LUALEVELDB_LOGMODE
-			//cout << "LOG: " << it->key().ToString() << " -> "  << it->value().ToString() << endl;
-		#endif
+	it->SeekToFirst();
+
+	if(!it->Valid())
+		oss << "Database is empty." << endl;
+	else {
+
+		//for (it->SeekToFirst(); it->Valid(); it->Next()) {
+		while(it->Valid()) {
+			oss << it->key().ToString() << " -> "  << it->value().ToString() << endl;
+
+			#ifdef LUALEVELDB_LOGMODE
+				//cout << "LOG: " << it->key().ToString() << " -> "  << it->value().ToString() << endl;
+			#endif
+
+			it->Next();
+		}
 	}
 	
 	assert(it->status().ok());
@@ -586,6 +752,14 @@ static int lvldb_database_tostring(lua_State *L) {
 	lua_pushstring(L, oss.str().c_str());
 	
 	return 1;
+}
+
+static int lvldb_iterator_delete(lua_State *L) {
+	Iterator *iter = check_iter(L);
+
+	delete iter;
+
+	return 0;
 }
 
 static int lvldb_iterator_seek(lua_State *L) {
@@ -630,7 +804,7 @@ static int lvldb_iterator_next(lua_State *L) {
 	return 0;
 }
 
-static int lvldb_iterator_key(lua_State *L) {
+static int lvldb_iterator_keystr(lua_State *L) {
 	Iterator *iter = check_iter(L);
 
 	lua_pushstring(L, iter->key().ToString().c_str());
@@ -638,7 +812,19 @@ static int lvldb_iterator_key(lua_State *L) {
 	return 1;
 }
 
-static int lvldb_iterator_value(lua_State *L) {
+static int lvldb_iterator_keynum(lua_State *L) {
+	Iterator *iter = check_iter(L);
+
+	lua_Number k;
+
+	k = lua_str2number(iter->value().ToString().c_str(), NULL);
+
+	lua_pushnumber(L, k);
+
+	return 1;
+}
+
+static int lvldb_iterator_valstr(lua_State *L) {
 	Iterator *iter = check_iter(L);
 
 	lua_pushstring(L, iter->value().ToString().c_str());
@@ -646,8 +832,25 @@ static int lvldb_iterator_value(lua_State *L) {
 	return 1;
 }
 
+static int lvldb_iterator_valnum(lua_State *L) {
+	Iterator *iter = check_iter(L);
+
+	lua_Number v;
+
+	v = slice2num(iter->value().ToString().c_str());
+
+	lua_pushnumber(L, v);
+
+	return 1;
+}
+
 /**
- * LevelDB atomic batch support.
+ * LevelDB atomic batch support
+ * ----------------------------
+ */
+
+/**
+ * To string function for the WriteBatch object.
  */
 static int lvldb_batch_tostring(lua_State *L) {
 	WriteBatch batch = *(check_writebatch(L, 1));
@@ -659,6 +862,9 @@ static int lvldb_batch_tostring(lua_State *L) {
 	return 1;
 }
 
+/**
+ * Put a key,value into the batch.
+ */
 static int lvldb_batch_put(lua_State *L) {
 	WriteBatch batch = *(check_writebatch(L, 1));
 
@@ -670,6 +876,9 @@ static int lvldb_batch_put(lua_State *L) {
 	return 0;
 }
 
+/**
+ * Delete a key from the batch.
+ */
 static int lvldb_batch_del(lua_State *L) {
 	WriteBatch batch = *(check_writebatch(L, 1));
 
@@ -680,6 +889,9 @@ static int lvldb_batch_del(lua_State *L) {
 	return 0;
 }
 
+/**
+ * Clear the whole batch.
+ */
 static int lvldb_batch_clear(lua_State *L) {
 	WriteBatch batch = *(check_writebatch(L, 1));
 
@@ -688,9 +900,12 @@ static int lvldb_batch_clear(lua_State *L) {
 	return 0;
 }
 
+
 /**
- * Wrapping up the library.
+ * Wrapping up the library into LUA
+ * --------------------------------
  */
+
 // empty
 static const struct luaL_reg E[] = { { NULL, NULL } };
 
@@ -796,6 +1011,7 @@ static const luaL_reg lvldb_database_m[] = {
 		{ "put", lvldb_database_put },
 		{ "set", lvldb_database_set },
 		{ "get", lvldb_database_get },
+		{ "gett", lvldb_database_gett },
 		{ "delete", lvldb_database_del },
 		{ "iterator", lvldb_database_iterator },
 		{ "write", lvldb_database_write },
@@ -805,13 +1021,18 @@ static const luaL_reg lvldb_database_m[] = {
 
 // iterator methods
 static const struct luaL_reg lvldb_iterator_m[] = {
+		{ "del", lvldb_iterator_delete },
 		{ "seek", lvldb_iterator_seek },
 		{ "seekToFirst", lvldb_iterator_seek_to_first },
 		{ "seekToLast", lvldb_iterator_seek_to_last },
 		{ "valid", lvldb_iterator_valid },
 		{ "next", lvldb_iterator_next },
-		{ "key", lvldb_iterator_key },
-		{ "value", lvldb_iterator_value },
+		{ "key", lvldb_iterator_keystr },
+		{ "keystr", lvldb_iterator_keystr },
+		{ "keynum", lvldb_iterator_keynum },
+		{ "value", lvldb_iterator_valstr },
+		{ "valstr", lvldb_iterator_valstr },
+		{ "valnum", lvldb_iterator_valnum },
 		{ NULL, NULL }
 };
 
@@ -826,6 +1047,7 @@ static const luaL_reg lvldb_batch_m[] = {
 
 extern "C" {
 
+// Initialization
 LUALIB_API int luaopen_leveldb(lua_State *L) {
 	// register module
 	luaL_register(L, LVLDB_MOD_NAME, E);

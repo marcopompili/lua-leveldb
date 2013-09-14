@@ -15,10 +15,10 @@ Most of the basic options and functions are supported right now, but still not t
 
 Installation
 -----
-The library is packed like a rock extension for lua. Check out luarocks (http://luarocks.org/).
-Before installing check that you got leveldb correctly installed for your linux distribution.
-To install execute make.sh as root, this script should build the library and install it as a "Rock".
-To remove the library us remove.sh to remove the package and delete the builded file.
+The library is packed like a luarock extension, check out luarocks (http://luarocks.org/).
+  * Before installing check that you got leveldb correctly installed for your linux distribution.
+  * To install execute make.sh as root, this script should build the library and install it as a luarock package.
+  * To remove the library us remove.sh (as root) to remove the package and delete the built files.
 
 Support
 -----
@@ -30,6 +30,9 @@ This is what is on business:
   * Iterators with seek and iteration operations are supported.
   * Atomic batch updates supported.
   * Experimental support for unique values.
+  * Added support for storing numeric values.
+  * Multiple methods for getting values (as string or number).
+  * ToString support for varius objects.
 
 Basic Example
 -----
@@ -68,20 +71,47 @@ local opt = leveldb.options()
 opt.createIfMissing = true
 opt.errorIfExists = false
 
-local db = leveldb.open(opt, 'test.db')
+-- string example
+local db_str = leveldb.open(opt, 'str.db')
 
-db:put('key1', 'value1')
-db:put('key2', 'value2')
-db:put('key3', 'value3')
+db_str:put('key1', 'value1')
+db_str:put('key2', 'value2')
+db_str:put('key3', 'value3')
 
-local iter = db:iterator()
+local iter = db_str:iterator()
 
 iter:seekToFirst()
 
 while(iter:valid())
 do
-	print(iter:key() .. ' ' .. iter:value())
-	
-	iter:next() -- go next
+    print(iter:key() .. ' ' .. iter:value()) -- value() or string() can be used
+
+    iter:next()
 end
+
+iter:del()
+
+leveldb.close(db_str)
+
+-- number example
+local db_num = leveldb.open(opt, 'num.db')
+
+db_num:put('key1', 1)
+db_num:put('key2', 2)
+db_num:put('key3', 3.14)
+
+iter = db_num:iterator()
+
+iter:seekToFirst()
+
+while(iter:valid())
+do
+	print(iter:key() .. ' ' .. iter:valnum()) -- get value as number
+	
+	iter:next()
+end
+
+iter:del()
+
+leveldb.close(db_num)
 ```
