@@ -14,16 +14,17 @@ So i wrote this basic lua extension to access Leveldb functions directly from lu
 Most of the basic options and functions are supported right now, but still not the full set of operations permitted by Leveldb.
 
 Installation
------
+------------
 The library is packed like a luarock extension, check out luarocks (http://luarocks.org/).
   * Before installing check that you got leveldb correctly installed for your linux distribution.
   * To install execute make.sh as root, this script should build the library and install it as a luarock package.
-  * To remove the library us remove.sh (as root) to remove the package and delete the built files.
+  * To remove the library use remove.sh (as root) to remove the package and delete the built files.
 
 Support
------
-The extension still not support the full set of operations permitted by the C++ library.
-This is what is on business:  
+-------
+The extension still not support the full set of operations permitted by the leveldb library.
+
+This is what i got working for now:
   * Basic open/close/repair database operations supported.  
   * Basic database write, read and delete operations.
   * Partial access to most important options settings is supported.
@@ -35,7 +36,7 @@ This is what is on business:
   * ToString support for varius objects.
 
 Basic Example
------
+-------------
 This is a simple example on how to use the lua extension for Google's leveldb:
 
 ```lua
@@ -63,7 +64,7 @@ leveldb.close(testdb)
 ```
 
 Iterator Example
------
+----------------
 ```lua
 require 'leveldb'
 
@@ -115,3 +116,17 @@ iter:del()
 
 leveldb.close(db_num)
 ```
+
+License
+-------
+The lua-leveldb code is licensed under the terms of the MIT license reproduced below. 
+This means that lua-leveldb is free software and can be used for both academic and 
+commercial purposes at absolutely no cost, check the LICENSE file for details.
+
+Note that leveldb library itself (included for convenience) is licensed under:
+BSD-3 (http://opensource.org/licenses/BSD-3-Clause).
+
+Contacts
+--------
+- Marco Pompili
+- [emarcs.org](http://www.emarcs.org)
