@@ -119,11 +119,12 @@ leveldb.close(db_num)
 
 License
 -------
-The lua-leveldb code is licensed under the terms of the MIT license reproduced below. 
+The lua-leveldb code is licensed under the terms of the MIT license. 
 This means that lua-leveldb is free software and can be used for both academic and 
 commercial purposes at absolutely no cost, check the LICENSE file for details.
 
 Note that leveldb library itself (included for convenience) is licensed under:
+
 BSD-3 (http://opensource.org/licenses/BSD-3-Clause).
 
 Contacts
