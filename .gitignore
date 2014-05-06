@@ -26,5 +26,6 @@
 *.x86_64
 *.hex
 
-examples/*.db
+lua/examples/*.db
+lua/lunit/*.db
 src/config.h

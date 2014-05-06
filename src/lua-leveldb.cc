@@ -35,7 +35,7 @@ extern "C" {
 #include <lua5.1/lauxlib.h>
 #include <lua5.1/lualib.h>
 
-// LUA 5.2.2
+// LUA 5.2.3
 //#include <lua.h>
 //#include <lauxlib.h>
 //#include <lualib.h>
@@ -579,6 +579,14 @@ static int lvldb_database_get(lua_State *L) {
 	return 1;
 }
 
+
+/**
+ * Method that gets a value, asking for a specific output data type.
+ * -----------------------------------------------------------------$
+ * This DB related method returns in LUA:
+ * 	* A string type or a number type.
+ * 	* False in case of error.
+ */
 //TODO test it
 static int lvldb_database_gett(lua_State *L) {
 	DB *db = check_database(L, 1);

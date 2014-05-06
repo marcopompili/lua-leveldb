@@ -2,7 +2,7 @@
  * utils.h
  *
  *  Created on: 14/set/2013
- *      Author: loki
+ *      Author: Marco Pompili
  */
 
 #ifndef UTILS_H_

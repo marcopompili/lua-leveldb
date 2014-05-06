@@ -2,7 +2,7 @@ package = "lua-leveldb"
 version = "0.2-1"
 source = {
 	url = "git://github.com/marcopompili/lua-leveldb.git",
-	branch = "master",
+	branch = "0.2",
 	md5 = "fa05ed5865e02b7fd412c7ec43b20d85"
 }
 description = {
