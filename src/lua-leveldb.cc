@@ -9,11 +9,9 @@
 // LevelDB atomic operation header
 #include <leveldb/write_batch.h>
 
-#include "config.h"
-
 // Rock info
-#define LUALEVELDB_VERSION		"LUA-LevelDB 0.3.0"
-#define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012-13, LUA-LevelDB by Marco Pompili (marcs.pompili@gmail.com)."
+#define LUALEVELDB_VERSION		"LUA-LevelDB 0.2.0-2"
+#define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012-14, LUA-LevelDB by Marco Pompili (marcs.pompili@gmail.com)."
 #define LUALEVELDB_DESCRIPTION	"LUA bindings for Google's LevelDB library."
 #define LUALEVELDB_LOGMODE		0
 
