@@ -278,7 +278,7 @@ static Options *check_options(lua_State *L, int index) {
 	opt = (Options*)luaL_checkudata(L, index, LVLDB_MT_OPT);
 
 	if(opt == NULL)
-		luaL_typerror(L, index, LVLDB_MT_OPT);
+		luaL_argerror(L, index, "Options is NULL");
 
 	return opt;
 }
