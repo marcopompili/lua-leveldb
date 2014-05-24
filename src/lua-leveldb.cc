@@ -198,7 +198,7 @@ static void init_complex_metatable(lua_State *L, const char *metatable_name, con
 	lua_pushcclosure(L, newindex_handler, 1);
 	lua_rawset(L, metatable_stack);
 
-	lua_pop(L, 1);
+	lua_settop(L, methods_stack-1);
 }
 
 /**
@@ -216,6 +216,7 @@ static void init_metatable(lua_State *L, const char *metatable, const struct lua
 
 	// meta-table already on the stack
 	luaL_openlib(L, NULL, lib, 0);
+	lua_pop(L, 1);
 }
 
 using namespace leveldb;
