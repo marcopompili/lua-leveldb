@@ -29,14 +29,14 @@ extern "C" {
 #include <stdlib.h>
 
 // LUA 5.1.5
-#include <lua5.1/lua.h>
-#include <lua5.1/lauxlib.h>
-#include <lua5.1/lualib.h>
+//#include <lua5.1/lua.h>
+//#include <lua5.1/lauxlib.h>
+//#include <lua5.1/lualib.h>
 
 // LUA 5.2.3
-//#include <lua.h>
-//#include <lauxlib.h>
-//#include <lualib.h>
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
 #include "utils.h"
 
@@ -173,12 +173,13 @@ static int newindex_handler(lua_State *L) {
 static void init_complex_metatable(lua_State *L, const char *metatable_name, const luaL_Reg methods[], const luaL_Reg metamethods[], const Xet_reg_pre getters[], const Xet_reg_pre setters[]) {
 
 	// create methods table, & add it to the table of globals
-	luaL_openlib(L, metatable_name, methods, 0); //5.1
+	lua_newtable(L);
+	luaL_setfuncs(L, methods, 0);
 	int methods_stack = lua_gettop(L);
 
 	// create meta-table for object, & add it to the registry
 	luaL_newmetatable(L, metatable_name);
-	luaL_openlib(L, 0, metamethods, 0); // fill meta-table
+	luaL_setfuncs(L, metamethods, 0); // fill meta-table
 	int metatable_stack = lua_gettop(L);
 
 	lua_pushliteral(L, "__metatable");
@@ -215,7 +216,7 @@ static void init_metatable(lua_State *L, const char *metatable, const struct lua
 	lua_settable(L, -3); // meta-table.__index = meta-table
 
 	// meta-table already on the stack
-	luaL_openlib(L, NULL, lib, 0);
+	luaL_setfuncs(L, lib, 0);
 	lua_pop(L, 1);
 }
 
@@ -1056,8 +1057,7 @@ extern "C" {
 
 // Initialization
 LUALIB_API int luaopen_leveldb(lua_State *L) {
-	// register module
-	luaL_register(L, LVLDB_MOD_NAME, E);
+	lua_newtable(L);
 
 	// register module information
 	lua_pushliteral(L, LUALEVELDB_VERSION);
@@ -1070,7 +1070,7 @@ LUALIB_API int luaopen_leveldb(lua_State *L) {
 	lua_setfield(L, -2, "_DESCRIPTION");
 
 	// LevelDB methods
-	luaL_openlib(L, LVLDB_MOD_NAME, lvldb_leveldb_m, 0);
+	luaL_setfuncs(L, lvldb_leveldb_m, 0);
 
 	// initialize meta-tables
 	init_metatable(L, LVLDB_MT_DB, lvldb_database_m);
