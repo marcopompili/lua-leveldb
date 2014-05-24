@@ -1080,7 +1080,7 @@ LUALIB_API int luaopen_leveldb(lua_State *L) {
 	init_metatable(L, LVLDB_MT_ITER, lvldb_iterator_m);
 	init_metatable(L, LVLDB_MT_BATCH, lvldb_batch_m);
 
-	return 0;
+	return 1;
 }
 
 }
