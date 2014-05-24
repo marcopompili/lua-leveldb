@@ -170,7 +170,7 @@ static int newindex_handler(lua_State *L) {
 	return Xet_call(L); // call set function
 }
 
-static void init_complex_metatable(lua_State *L, const char *metatable_name, const luaL_reg methods[], const luaL_reg metamethods[], const Xet_reg_pre getters[], const Xet_reg_pre setters[]) {
+static void init_complex_metatable(lua_State *L, const char *metatable_name, const luaL_Reg methods[], const luaL_Reg metamethods[], const Xet_reg_pre getters[], const Xet_reg_pre setters[]) {
 
 	// create methods table, & add it to the table of globals
 	luaL_openlib(L, metatable_name, methods, 0); //5.1
@@ -204,7 +204,7 @@ static void init_complex_metatable(lua_State *L, const char *metatable_name, con
 /**
  * Procedure for adding a meta-table into the stack.
  */
-static void init_metatable(lua_State *L, const char *metatable, const struct luaL_reg lib[]) {
+static void init_metatable(lua_State *L, const char *metatable, const struct luaL_Reg lib[]) {
 
 	// let's build the function meta-table
 	if (luaL_newmetatable(L, metatable) == 0)
@@ -913,10 +913,10 @@ static int lvldb_batch_clear(lua_State *L) {
  */
 
 // empty
-static const struct luaL_reg E[] = { { NULL, NULL } };
+static const struct luaL_Reg E[] = { { NULL, NULL } };
 
 // main methods
-static const luaL_reg lvldb_leveldb_m[] = {
+static const luaL_Reg lvldb_leveldb_m[] = {
 		{ "open", lvldb_open },
 		{ "close", lvldb_close },
 		{ "options", lvldb_options },
@@ -929,12 +929,12 @@ static const luaL_reg lvldb_leveldb_m[] = {
 };
 
 // options methods
-static const luaL_reg lvldb_options_m[] = {
+static const luaL_Reg lvldb_options_m[] = {
 		{ 0, 0 }
 };
 
 // options meta-methods
-static const luaL_reg lvldb_options_meta[] = {
+static const luaL_Reg lvldb_options_meta[] = {
 		{ "__tostring", lvldb_options_tostring },
 		{ 0, 0}
 };
@@ -964,12 +964,12 @@ static const Xet_reg_pre options_setters[] = {
 };
 
 // read options methods
-static const luaL_reg lvldb_read_options_m[] = {
+static const luaL_Reg lvldb_read_options_m[] = {
 		{ 0, 0 }
 };
 
 // read options meta-methods
-static const luaL_reg lvldb_read_options_meta[] = {
+static const luaL_Reg lvldb_read_options_meta[] = {
 		{ "__tostring", lvldb_read_options_tostring },
 		{ 0, 0 }
 };
@@ -989,12 +989,12 @@ static const Xet_reg_pre read_options_setters[] = {
 };
 
 // write options methods
-static const luaL_reg lvldb_write_options_m[] = {
+static const luaL_Reg lvldb_write_options_m[] = {
 		{ 0, 0 }
 };
 
 // write options meta-methods
-static const luaL_reg lvldb_write_options_meta[] = {
+static const luaL_Reg lvldb_write_options_meta[] = {
 		{ "__tostring", lvldb_write_options_tostring },
 		{ 0, 0 }
 };
@@ -1012,7 +1012,7 @@ static const Xet_reg_pre write_options_setters[] = {
 };
 
 // database methods
-static const luaL_reg lvldb_database_m[] = {
+static const luaL_Reg lvldb_database_m[] = {
 		{ "__tostring", lvldb_database_tostring },
 		{ "put", lvldb_database_put },
 		{ "set", lvldb_database_set },
@@ -1026,7 +1026,7 @@ static const luaL_reg lvldb_database_m[] = {
 };
 
 // iterator methods
-static const struct luaL_reg lvldb_iterator_m[] = {
+static const struct luaL_Reg lvldb_iterator_m[] = {
 		{ "del", lvldb_iterator_delete },
 		{ "seek", lvldb_iterator_seek },
 		{ "seekToFirst", lvldb_iterator_seek_to_first },
@@ -1043,7 +1043,7 @@ static const struct luaL_reg lvldb_iterator_m[] = {
 };
 
 // batch methods
-static const luaL_reg lvldb_batch_m[] = {
+static const luaL_Reg lvldb_batch_m[] = {
 		{ "__tostring", lvldb_batch_tostring },
 		{ "put", lvldb_batch_put },
 		{ "delete", lvldb_batch_del },
