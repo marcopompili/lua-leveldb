@@ -1,30 +1,27 @@
 lua-leveldb
 ===========
-
-LUA bindings for Google's LevelDB key/store database.
+Lua bindings for Google's LevelDB key/store database.
 
 From the GoogleCode page:
 "The LevelDB library provides a persistent key value store. Keys and values are arbitrary byte arrays.
 The keys are ordered within the key value store according to a user-specified comparator function."
 
-I wrote an extension because i needed a fast embeddable key/value database to use it with WireShark for packet analysis.
-I needed to analyze some big PCAP files and divide the traffic using some given rules.
-So i wrote this basic LUA extension to access LevelDB functions directly from LUA that's used as extension language for WireShark.
+I wrote this extension because I needed a fast embeddable key/value database for tcp/ip packet analysis. I needed to analyze big files in pcap format and divide the traffic using some specific rules. This simple Lua extension allows you to access LevelDB from Lua in a quite simple way. Lua is also used as extension language for WireShark.
 
-Most of the basic options and functions are supported right now, but still not the full set of operations permitted by LevelDB.
+Most of the basic options and functions are supported right now, but still not the full set of operations permitted by LevelDB. Take a look at the examples below.
 
 Installation
 ------------
-The library is packed like a luaRock extension, check out luaRocks (http://luarocks.org/).
-  * Before installing check that you got LevelDB correctly installed for your Linux distribution.
-  * To install execute make.sh as root, this script should build the library and install it as a luaRock package.
+The library is packed like a luaRock extension, check out [luarocks.org](http://luarocks.org/).
+  * Before installing be sure that you got LevelDB correctly installed for your Linux distribution.
+  * To install execute make.sh as root, this script should build the library and install it as a luarock package.
   * To remove the library use remove.sh (as root) to remove the package and delete the built files.
 
 Support
 -------
 The extension still not support the full set of operations permitted by the LevelDB library.
 
-This is what i got working for now:
+These are the current possible operation:
   * Basic open/close/repair database operations supported.  
   * Basic database write, read and delete operations.
   * Partial access to most important options settings is supported.
@@ -37,7 +34,7 @@ This is what i got working for now:
 
 Basic Example
 -------------
-This is a simple example on how to use the LUA extension for Google's LevelDB:
+This is a simple example about how to use the Lua extension for Google's LevelDB:
 
 ```lua
 require 'leveldb'
@@ -65,6 +62,8 @@ leveldb.close(testdb)
 
 Iterator Example
 ----------------
+An example using iterators:
+
 ```lua
 require 'leveldb'
 
@@ -120,8 +119,7 @@ leveldb.close(db_num)
 LUnit tests
 -----------
 The examples above have been adapted to be used as unit tests using lunitx.
-To setup the testing environment I've added some scripts in the lunit_setup folder.
- 
+To setup the testing environment I've added some scripts in the lunit_setup folder, they should make the configuration of lunitx easier.
 
 License
 -------
@@ -129,9 +127,7 @@ The lua-leveldb code is licensed under the terms of the MIT license.
 This means that lua-leveldb is free software and can be used for both academic and 
 commercial purposes at absolutely no cost, check the LICENSE file for details.
 
-Note that LevelDB library itself (included for convenience) is licensed under:
-
-BSD-3 (http://opensource.org/licenses/BSD-3-Clause).
+Note that LevelDB library itself (included for convenience) is licensed under [BSD-3](http://opensource.org/licenses/BSD-3-Clause).
 
 Contacts
 --------
