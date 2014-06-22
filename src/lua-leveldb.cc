@@ -247,6 +247,7 @@ static Slice lua_param_to_slice(lua_State *L, int i) {
 	else if(lua_isstring(L, i))
 		return Slice(lua_tostring(L, i));
 	else
+		luaL_argerror(L, i, "Expecting number or string");
 		return NULL;
 }
 
