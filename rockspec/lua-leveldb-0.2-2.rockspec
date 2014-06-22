@@ -11,8 +11,7 @@ description = {
 		LevelDB is a fast key-value storage library written 
 		at Google that provides an ordered mapping from string 
 		keys to string values. This is an extension to use
-		LevelDB directly from LUA.
-		It has been tested on LUA 5.1.
+		LevelDB directly from Lua. It has been tested on Lua 5.1.
 	]],
 	homepage = "https://github.com/marcopompili/lua-leveldb",
 	license = "MIT/X11",
