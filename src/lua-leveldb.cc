@@ -231,24 +231,23 @@ using namespace leveldb;
  */
 static Slice lua_param_to_slice(lua_State *L, int i) {
 
-	if(lua_isnumber(L, i)) {
-//		lua_Number lua_number;
-//		char lua_number_str[LUAI_MAXNUMBER2STR];
-//
-//		//unsigned char buf[sizeof lua_number] = {0};
-//		//double2bin(lua_number, buf);
-//
-//		lua_number = lua_tonumber(L, i);
-//		lua_number2str(lua_number_str, lua_number);
-//
-//		return Slice(lua_number_str);
-		return Slice(lua_tostring(L, i));
+	switch(lua_type(L, i))
+	{
+		case LUA_TNUMBER: {
+			return Slice(lua_tostring(L, i));
+			break;
+		}
+
+		case LUA_TSTRING: {
+			return Slice(lua_tostring(L, i));
+			break;
+		}
+
+		default: {
+			luaL_argerror(L, i, "Expecting number or string");
+			return NULL; // not executed
+		}
 	}
-	else if(lua_isstring(L, i))
-		return Slice(lua_tostring(L, i));
-	else
-		luaL_argerror(L, i, "Expecting number or string");
-		return NULL;
 }
 
 static string bool_to_string(int boolean) {
