@@ -10,7 +10,7 @@
 #include <leveldb/write_batch.h>
 
 // Rock info
-#define LUALEVELDB_VERSION		"Lua-LevelDB 0.2.0-2"
+#define LUALEVELDB_VERSION		"Lua-LevelDB 0.2.0"
 #define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012-14, Lua-LevelDB by Marco Pompili (marcs.pompili@gmail.com)."
 #define LUALEVELDB_DESCRIPTION	"Lua bindings for Google's LevelDB library."
 #define LUALEVELDB_LOGMODE		0
@@ -28,12 +28,12 @@ extern "C" {
 
 #include <stdlib.h>
 
-// LUA 5.1.5
+// LUA 5.1.x
 //#include <lua5.1/lua.h>
 //#include <lua5.1/lauxlib.h>
 //#include <lua5.1/lualib.h>
 
-// LUA 5.2.3
+// LUA 5.2.x
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
