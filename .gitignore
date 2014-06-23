@@ -1,3 +1,4 @@
+# Eclipse stuff
 .project
 .cproject
 .settings
@@ -28,5 +29,4 @@
 *.hex
 
 lua/examples/*.db
-lua/lunit/*.db
-src/config.h
+lua/unit/*.db
