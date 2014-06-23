@@ -1,5 +1,5 @@
 require 'lunit'
-require 'leveldb'
+local leveldb = require 'leveldb'
 
 
 module("resource_testcase", lunit.testcase, package.seeall)
