@@ -1,4 +1,4 @@
-require 'leveldb'
+local leveldb = require 'leveldb'
 
 opt = leveldb.options()
 opt.createIfMissing = true

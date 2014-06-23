@@ -29,14 +29,14 @@ extern "C" {
 #include <stdlib.h>
 
 // LUA 5.1.5
-#include <lua5.1/lua.h>
-#include <lua5.1/lauxlib.h>
-#include <lua5.1/lualib.h>
+//#include <lua5.1/lua.h>
+//#include <lua5.1/lauxlib.h>
+//#include <lua5.1/lualib.h>
 
 // LUA 5.2.3
-//#include <lua.h>
-//#include <lauxlib.h>
-//#include <lualib.h>
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
 #include "utils.h"
 
@@ -170,15 +170,16 @@ static int newindex_handler(lua_State *L) {
 	return Xet_call(L); // call set function
 }
 
-static void init_complex_metatable(lua_State *L, const char *metatable_name, const luaL_reg methods[], const luaL_reg metamethods[], const Xet_reg_pre getters[], const Xet_reg_pre setters[]) {
+static void init_complex_metatable(lua_State *L, const char *metatable_name, const luaL_Reg methods[], const luaL_Reg metamethods[], const Xet_reg_pre getters[], const Xet_reg_pre setters[]) {
 
 	// create methods table, & add it to the table of globals
-	luaL_openlib(L, metatable_name, methods, 0); //5.1
+	lua_newtable(L);
+	luaL_setfuncs(L, methods, 0);
 	int methods_stack = lua_gettop(L);
 
 	// create meta-table for object, & add it to the registry
 	luaL_newmetatable(L, metatable_name);
-	luaL_openlib(L, 0, metamethods, 0); // fill meta-table
+	luaL_setfuncs(L, metamethods, 0); // fill meta-table
 	int metatable_stack = lua_gettop(L);
 
 	lua_pushliteral(L, "__metatable");
@@ -198,13 +199,13 @@ static void init_complex_metatable(lua_State *L, const char *metatable_name, con
 	lua_pushcclosure(L, newindex_handler, 1);
 	lua_rawset(L, metatable_stack);
 
-	lua_pop(L, 1);
+	lua_settop(L, methods_stack-1);
 }
 
 /**
  * Procedure for adding a meta-table into the stack.
  */
-static void init_metatable(lua_State *L, const char *metatable, const struct luaL_reg lib[]) {
+static void init_metatable(lua_State *L, const char *metatable, const struct luaL_Reg lib[]) {
 
 	// let's build the function meta-table
 	if (luaL_newmetatable(L, metatable) == 0)
@@ -215,7 +216,8 @@ static void init_metatable(lua_State *L, const char *metatable, const struct lua
 	lua_settable(L, -3); // meta-table.__index = meta-table
 
 	// meta-table already on the stack
-	luaL_openlib(L, NULL, lib, 0);
+	luaL_setfuncs(L, lib, 0);
+	lua_pop(L, 1);
 }
 
 using namespace leveldb;
@@ -278,7 +280,7 @@ static Options *check_options(lua_State *L, int index) {
 	opt = (Options*)luaL_checkudata(L, index, LVLDB_MT_OPT);
 
 	if(opt == NULL)
-		luaL_typerror(L, index, LVLDB_MT_OPT);
+		luaL_argerror(L, index, "Options is NULL");
 
 	return opt;
 }
@@ -913,10 +915,10 @@ static int lvldb_batch_clear(lua_State *L) {
  */
 
 // empty
-static const struct luaL_reg E[] = { { NULL, NULL } };
+static const struct luaL_Reg E[] = { { NULL, NULL } };
 
 // main methods
-static const luaL_reg lvldb_leveldb_m[] = {
+static const luaL_Reg lvldb_leveldb_m[] = {
 		{ "open", lvldb_open },
 		{ "close", lvldb_close },
 		{ "options", lvldb_options },
@@ -929,12 +931,12 @@ static const luaL_reg lvldb_leveldb_m[] = {
 };
 
 // options methods
-static const luaL_reg lvldb_options_m[] = {
+static const luaL_Reg lvldb_options_m[] = {
 		{ 0, 0 }
 };
 
 // options meta-methods
-static const luaL_reg lvldb_options_meta[] = {
+static const luaL_Reg lvldb_options_meta[] = {
 		{ "__tostring", lvldb_options_tostring },
 		{ 0, 0}
 };
@@ -964,12 +966,12 @@ static const Xet_reg_pre options_setters[] = {
 };
 
 // read options methods
-static const luaL_reg lvldb_read_options_m[] = {
+static const luaL_Reg lvldb_read_options_m[] = {
 		{ 0, 0 }
 };
 
 // read options meta-methods
-static const luaL_reg lvldb_read_options_meta[] = {
+static const luaL_Reg lvldb_read_options_meta[] = {
 		{ "__tostring", lvldb_read_options_tostring },
 		{ 0, 0 }
 };
@@ -989,12 +991,12 @@ static const Xet_reg_pre read_options_setters[] = {
 };
 
 // write options methods
-static const luaL_reg lvldb_write_options_m[] = {
+static const luaL_Reg lvldb_write_options_m[] = {
 		{ 0, 0 }
 };
 
 // write options meta-methods
-static const luaL_reg lvldb_write_options_meta[] = {
+static const luaL_Reg lvldb_write_options_meta[] = {
 		{ "__tostring", lvldb_write_options_tostring },
 		{ 0, 0 }
 };
@@ -1012,7 +1014,7 @@ static const Xet_reg_pre write_options_setters[] = {
 };
 
 // database methods
-static const luaL_reg lvldb_database_m[] = {
+static const luaL_Reg lvldb_database_m[] = {
 		{ "__tostring", lvldb_database_tostring },
 		{ "put", lvldb_database_put },
 		{ "set", lvldb_database_set },
@@ -1026,7 +1028,7 @@ static const luaL_reg lvldb_database_m[] = {
 };
 
 // iterator methods
-static const struct luaL_reg lvldb_iterator_m[] = {
+static const struct luaL_Reg lvldb_iterator_m[] = {
 		{ "del", lvldb_iterator_delete },
 		{ "seek", lvldb_iterator_seek },
 		{ "seekToFirst", lvldb_iterator_seek_to_first },
@@ -1043,7 +1045,7 @@ static const struct luaL_reg lvldb_iterator_m[] = {
 };
 
 // batch methods
-static const luaL_reg lvldb_batch_m[] = {
+static const luaL_Reg lvldb_batch_m[] = {
 		{ "__tostring", lvldb_batch_tostring },
 		{ "put", lvldb_batch_put },
 		{ "delete", lvldb_batch_del },
@@ -1055,8 +1057,7 @@ extern "C" {
 
 // Initialization
 LUALIB_API int luaopen_leveldb(lua_State *L) {
-	// register module
-	luaL_register(L, LVLDB_MOD_NAME, E);
+	lua_newtable(L);
 
 	// register module information
 	lua_pushliteral(L, LUALEVELDB_VERSION);
@@ -1069,7 +1070,7 @@ LUALIB_API int luaopen_leveldb(lua_State *L) {
 	lua_setfield(L, -2, "_DESCRIPTION");
 
 	// LevelDB methods
-	luaL_openlib(L, LVLDB_MOD_NAME, lvldb_leveldb_m, 0);
+	luaL_setfuncs(L, lvldb_leveldb_m, 0);
 
 	// initialize meta-tables
 	init_metatable(L, LVLDB_MT_DB, lvldb_database_m);
@@ -1079,7 +1080,7 @@ LUALIB_API int luaopen_leveldb(lua_State *L) {
 	init_metatable(L, LVLDB_MT_ITER, lvldb_iterator_m);
 	init_metatable(L, LVLDB_MT_BATCH, lvldb_batch_m);
 
-	return 0;
+	return 1;
 }
 
 }
