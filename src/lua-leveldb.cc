@@ -10,12 +10,12 @@
 #include <leveldb/write_batch.h>
 
 // Rock info
-#define LUALEVELDB_VERSION		"LUA-LevelDB 0.2.0-2"
-#define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012-14, LUA-LevelDB by Marco Pompili (marcs.pompili@gmail.com)."
-#define LUALEVELDB_DESCRIPTION	"LUA bindings for Google's LevelDB library."
+#define LUALEVELDB_VERSION		"Lua-LevelDB 0.2.0-2"
+#define LUALEVELDB_COPYRIGHT	"Copyright (C) 2012-14, Lua-LevelDB by Marco Pompili (marcs.pompili@gmail.com)."
+#define LUALEVELDB_DESCRIPTION	"Lua bindings for Google's LevelDB library."
 #define LUALEVELDB_LOGMODE		0
 
-// LUA Meta-tables names
+// Lua Meta-tables names
 #define LVLDB_MOD_NAME		"leveldb"
 #define LVLDB_MT_OPT		"leveldb.opt"
 #define LVLDB_MT_ROPT		"leveldb.ropt"
@@ -223,9 +223,9 @@ static void init_metatable(lua_State *L, const char *metatable, const struct lua
 using namespace leveldb;
 
 /**
- * Converts a LUA parameter into a LevelDB's slice.
- * Every data stored from LUA is stored with this format.
- * This functions manage type conversion between LUA's
+ * Converts a Lua parameter into a LevelDB's slice.
+ * Every data stored from Lua is stored with this format.
+ * This functions manage type conversion between Lua's
  * types and the LevelDB's Slice.
  * ------------------------------------------------------
  * Reminder: lua_isnumber returns 1 also if the data is a string
@@ -233,23 +233,23 @@ using namespace leveldb;
  */
 static Slice lua_param_to_slice(lua_State *L, int i) {
 
-	if(lua_isnumber(L, i)) {
-//		lua_Number lua_number;
-//		char lua_number_str[LUAI_MAXNUMBER2STR];
-//
-//		//unsigned char buf[sizeof lua_number] = {0};
-//		//double2bin(lua_number, buf);
-//
-//		lua_number = lua_tonumber(L, i);
-//		lua_number2str(lua_number_str, lua_number);
-//
-//		return Slice(lua_number_str);
-		return Slice(lua_tostring(L, i));
+	switch(lua_type(L, i))
+	{
+		case LUA_TNUMBER: {
+			return Slice(lua_tostring(L, i));
+			break;
+		}
+
+		case LUA_TSTRING: {
+			return Slice(lua_tostring(L, i));
+			break;
+		}
+
+		default: {
+			luaL_argerror(L, i, "Expecting number or string");
+			return NULL; // not executed
+		}
 	}
-	else if(lua_isstring(L, i))
-		return Slice(lua_tostring(L, i));
-	else
-		return NULL;
 }
 
 static string bool_to_string(int boolean) {
@@ -526,14 +526,14 @@ static int lvldb_repair(lua_State *L) {
  * Data Operations
  * ---------------
  * Data operations are binded to a DB instance, the first parameter
- * is always a DB but the notation used in LUA is db:put, db:get etc.
+ * is always a DB but the notation used in Lua is db:put, db:get etc.
  */
 
 /**
  * Method that put a key,value into a DB.
  * --------------------------------------$
  * Inserts a key,value pair in the LevelDB Slice format.
- * This DB related method returns in LUA:
+ * This DB related method returns in Lua:
  *   * True in case of correct insertion.
  *   * False in case of error.
  */
@@ -558,7 +558,7 @@ static int lvldb_database_put(lua_State *L) {
 /**
  * Method that get a value with the given key from a DB.
  * -----------------------------------------------------$
- * This DB related method returns in LUA:
+ * This DB related method returns in Lua:
  *  * A string in case of success.
  *  * False in case of error.
  */
@@ -583,7 +583,7 @@ static int lvldb_database_get(lua_State *L) {
 /**
  * Method that gets a value, asking for a specific output data type.
  * -----------------------------------------------------------------$
- * This DB related method returns in LUA:
+ * This DB related method returns in Lua:
  * 	* A string type or a number type.
  * 	* False in case of error.
  */
@@ -910,7 +910,7 @@ static int lvldb_batch_clear(lua_State *L) {
 
 
 /**
- * Wrapping up the library into LUA
+ * Wrapping up the library into Lua
  * --------------------------------
  */
 
