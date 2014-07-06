@@ -6,7 +6,7 @@ From the GoogleCode page:
 "The LevelDB library provides a persistent key value store. Keys and values are arbitrary byte arrays.
 The keys are ordered within the key value store according to a user-specified comparator function."
 
-I wrote this extension because I needed a fast embeddable key/value database for tcp/ip packet analysis. I needed to analyze big files in pcap format and divide the traffic using some specific rules. This simple Lua extension allows you to access LevelDB from Lua in a quite simple way. Lua is also used as extension language for WireShark.
+I wrote this extension because I needed a fast embeddable key/value database for tcp/ip packet analysis. I had to analyze big files in pcap format and divide the traffic using some specific rules. This simple Lua extension allows you to access LevelDB from Lua in a quite simple way. Lua is also used as extension language for WireShark.
 
 Most of the basic options and functions are supported right now, but still not the full set of operations permitted by LevelDB. Take a look at the examples below.
 
@@ -17,6 +17,10 @@ The library is packed like a luaRock extension, check out [luarocks.org](http://
   * To install execute make.sh as root, this script should build the library and install it as a luarock package.
   * To remove the library use remove.sh (as root) to remove the package and delete the built files.
 
+To build the latest version use the make script like this:
+```
+sudo ./make.sh 0.3 1
+```
 Support
 -------
 The extension still not support the full set of operations permitted by the LevelDB library.
@@ -28,8 +32,7 @@ These are the current possible operation:
   * Iterators with seek and iteration operations are supported.
   * Atomic batch updates supported.
   * Experimental support for unique values.
-  * Added support for storing numeric values.
-  * Multiple methods for getting values (as string or number).
+  * Added support for storing string, numeric and boolean values.
   * ToString support for various objects.
 
 Basic Example
@@ -65,61 +68,77 @@ Iterator Example
 An example using iterators:
 
 ```lua
-require 'leveldb'
+local leveldb = require 'leveldb'
 
 local opt = leveldb.options()
 opt.createIfMissing = true
 opt.errorIfExists = false
 
--- string example
-local db_str = leveldb.open(opt, 'str.db')
+-- db example
+local db = leveldb.open(opt, 'iterator.db')
 
-db_str:put('key1', 'value1')
-db_str:put('key2', 'value2')
-db_str:put('key3', 'value3')
+assert(db:put('key1s', 'value1'))
+assert(db:put('key1n', 1))
+assert(db:put('key2s', 'value2'))
+assert(db:put('key2n', 2))
+assert(db:put('key3s', 'value3'))
+assert(db:put('key3n', 3.14))
+assert(db:put('keyb - true', true))
+assert(db:put('keyb - false', false))
 
-local iter = db_str:iterator()
+local iter = db:iterator()
 
 iter:seekToFirst()
 
 while(iter:valid())
 do
-    print(iter:key() .. ' ' .. iter:value()) -- value() or string() can be used
+    local value = iter:value();
+    print(iter:key() .. ' => ' .. '(' .. type(value) .. ') ' .. tostring(value))
 
     iter:next()
 end
 
 iter:del()
 
-leveldb.close(db_str)
-
--- number example
-local db_num = leveldb.open(opt, 'num.db')
-
-db_num:put('key1', 1)
-db_num:put('key2', 2)
-db_num:put('key3', 3.14)
-
-iter = db_num:iterator()
-
-iter:seekToFirst()
-
-while(iter:valid())
-do
-	print(iter:key() .. ' ' .. iter:valnum()) -- get value as number
-	
-	iter:next()
-end
-
-iter:del()
-
-leveldb.close(db_num)
+leveldb.close(db)
 ```
 
-LUnit tests
+Types
+-----
+At the moment only string, numbers and booleans can be stored.
+Here an examples of dealing with types.
+```lua
+local leveldb = require 'leveldb'
+
+opt = leveldb.options()
+opt.createIfMissing = true
+opt.errorIfExists = false
+
+db = leveldb.open(opt, 'types.db')
+assert(db:put("string", "Oh hai Mark!"))
+assert(db:put("number", 123456))
+assert(db:put("boolean", true))
+
+function check(val, expected)
+	assert(type(val) == expected, "expected " .. expected .. ", found: " .. type(val))
+end
+
+check(db:get("string"), "string")
+check(db:get("number"), "number")
+check(db:get("boolean"), "boolean")
+
+print("all type tests are fine!")
+
+leveldb.close(db)
+```
+
+Unit tests
 -----------
-The examples above have been adapted to be used as unit tests using lunitx.
-To setup the testing environment I've added some scripts in the lunit_setup folder, they should make the configuration of lunitx easier.
+The examples above have been adapted to be used as unit tests.
+
+Notes
+-----
+Lua-leveldb is compatible with Lua 5.2, unfortunately it is no more compatible with Lua 5.1.
 
 License
 -------
