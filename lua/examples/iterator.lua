@@ -7,12 +7,14 @@ opt.errorIfExists = false
 -- db example
 local db = leveldb.open(opt, 'iterator.db')
 
-db:put('key1', 'value1')
-db:put('key1n', 1)
-db:put('key2', 'value2')
-db:put('key2n', 2)
-db:put('key3', 'value3')
-db:put('key3n', 3.14)
+assert(db:put('key1s', 'value1'))
+assert(db:put('key1n', 1))
+assert(db:put('key2s', 'value2'))
+assert(db:put('key2n', 2))
+assert(db:put('key3s', 'value3'))
+assert(db:put('key3n', 3.14))
+assert(db:put('keyb - true', true))
+assert(db:put('keyb - false', false))
 
 local iter = db:iterator()
 
@@ -20,7 +22,8 @@ iter:seekToFirst()
 
 while(iter:valid())
 do
-    print(iter:key() .. ' ' .. iter:value()) -- value() or string() can be used
+    local value = iter:value();
+    print(iter:key() .. ' => ' .. '(' .. type(value) .. ') ' .. tostring(value))
 
     iter:next()
 end
