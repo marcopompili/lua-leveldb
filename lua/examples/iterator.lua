@@ -4,14 +4,17 @@ local opt = leveldb.options()
 opt.createIfMissing = true
 opt.errorIfExists = false
 
--- string example
-local db_str = leveldb.open(opt, 'str.db')
+-- db example
+local db = leveldb.open(opt, 'iterator.db')
 
-db_str:put('key1', 'value1')
-db_str:put('key2', 'value2')
-db_str:put('key3', 'value3')
+db:put('key1', 'value1')
+db:put('key1n', 1)
+db:put('key2', 'value2')
+db:put('key2n', 2)
+db:put('key3', 'value3')
+db:put('key3n', 3.14)
 
-local iter = db_str:iterator()
+local iter = db:iterator()
 
 iter:seekToFirst()
 
@@ -24,26 +27,4 @@ end
 
 iter:del()
 
-leveldb.close(db_str)
-
--- number example
-local db_num = leveldb.open(opt, 'num.db')
-
-db_num:put('key1', 1)
-db_num:put('key2', 2)
-db_num:put('key3', 3.14)
-
-iter = db_num:iterator()
-
-iter:seekToFirst()
-
-while(iter:valid())
-do
-	print(iter:key() .. ' ' .. iter:valnum()) -- get value as number
-	
-	iter:next()
-end
-
-iter:del()
-
-leveldb.close(db_num)
+leveldb.close(db)
