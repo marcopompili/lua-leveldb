@@ -26,8 +26,6 @@
 
 extern "C" {
 
-#include <stdlib.h>
-
 // LUA 5.1.x
 //#include <lua5.1/lua.h>
 //#include <lua5.1/lauxlib.h>
@@ -39,8 +37,9 @@ extern "C" {
 #include <lualib.h>
 
 #include "utils.h"
-
 }
+
+#include "lvldb-serializer.hpp"
 
 /**
  * Basic setters and getters
@@ -227,29 +226,52 @@ using namespace leveldb;
  * Every data stored from Lua is stored with this format.
  * This functions manage type conversion between Lua's
  * types and the LevelDB's Slice.
- * ------------------------------------------------------
- * Reminder: lua_isnumber returns 1 also if the data is a string
- * convertible to a number.
  */
-static Slice lua_param_to_slice(lua_State *L, int i) {
+static Slice lua_to_slice(lua_State *L, int i) {
+	LvLDBSerializer ser = LvLDBSerializer(L);
+	// write parameter into buffer
+	ser.set_lua_value(i);
 
-	switch(lua_type(L, i))
+	unsigned char *data = (unsigned char*)malloc(ser.buffer_len());
+	ser.buffer_data(data);
+
+	return Slice((const char*)data, ser.buffer_len());
+}
+
+/**
+ * Converts a LevelDB's slice into a Lua value.
+ * This the inverse operation of lua_to_slice.
+ * It's used with the get method, the iterator
+ * uses another function for conversion to Lua.
+ */
+static int string_to_lua(lua_State *L, string value) {
+	const char *data = value.data();
+	const char **lua_val_type = &data; // type
+
+	string lua_string = value.substr(sizeof(int), value.length());
+	char *lua_param_data = (char*)lua_string.c_str(); // value
+
+	switch(**lua_val_type)
 	{
+		case LUA_TBOOLEAN: {
+			lua_pushboolean(L, *(char*)lua_param_data);
+			break;
+		}
 		case LUA_TNUMBER: {
-			return Slice(lua_tostring(L, i));
+			lua_pushnumber(L, *(lua_Number*)lua_param_data);
 			break;
 		}
-
 		case LUA_TSTRING: {
-			return Slice(lua_tostring(L, i));
+			lua_pushlstring(L, lua_string.c_str(), lua_string.length());
 			break;
 		}
-
 		default: {
-			luaL_argerror(L, i, "Expecting number or string");
-			return NULL; // not executed
+			luaL_error(L, "Error: Cannot convert to Lua type!");
+			break;
 		}
 	}
+
+	return 1;
 }
 
 static string bool_to_string(int boolean) {
@@ -540,8 +562,8 @@ static int lvldb_repair(lua_State *L) {
 static int lvldb_database_put(lua_State *L) {
 	DB *db = check_database(L, 1);
 
-	Slice key = Slice(lua_param_to_slice(L, 2));
-	Slice value = Slice(lua_param_to_slice(L, 3));
+	Slice key = lua_to_slice(L, 2);
+	Slice value = lua_to_slice(L, 3);
 
 	Status s = db->Put(lvldb_wopt(L ,4), key, value);
 
@@ -564,13 +586,15 @@ static int lvldb_database_put(lua_State *L) {
  */
 static int lvldb_database_get(lua_State *L) {
 	DB *db = check_database(L, 1);
-	Slice key = Slice(lua_param_to_slice(L, 2));
 
+	Slice key = lua_to_slice(L, 2);
 	string value;
+
 	Status s = db->Get(lvldb_ropt(L, 3), key, &value);
 
-	if (s.ok())
-		lua_pushstring(L, value.c_str());
+	if (s.ok()) {
+		string_to_lua(L, value);
+	}
 	else {
 		cerr << "Error getting value (get): " << s.ToString() << endl;
 		lua_pushboolean(L, false);
@@ -579,40 +603,12 @@ static int lvldb_database_get(lua_State *L) {
 	return 1;
 }
 
-
 /**
- * Method that gets a value, asking for a specific output data type.
- * -----------------------------------------------------------------$
- * This DB related method returns in Lua:
- * 	* A string type or a number type.
- * 	* False in case of error.
+ *
  */
-//TODO test it
-static int lvldb_database_gett(lua_State *L) {
-	DB *db = check_database(L, 1);
-	Slice key = Slice(lua_param_to_slice(L, 2));
-
-	string value;
-	const char *type = luaL_optlstring(L, 3, STRTYPE, (size_t*)sizeof(STRTYPE));
-
-	Status s = db->Get(lvldb_ropt(L, 4), key, &value);
-
-	if (s.ok()) {
-		if(t_is_string(type))
-			lua_pushstring(L, value.c_str());
-		else if(t_is_number(type))
-			lua_pushnumber(L, slice2num(value.c_str()));
-	} else {
-		cerr << "Error getting value (gett): " << s.ToString() << endl;
-		lua_pushboolean(L, false);
-	}
-
-	return 1;
-}
-
 static int lvldb_database_set(lua_State *L) {
 	DB *db = check_database(L, 1);
-	Slice value = lua_param_to_slice(L, 2);
+	Slice value = lua_to_slice(L, 2);
 
 	// #ifdef __x86_64__ || __ppc64__
 	#ifdef __x86_64__
@@ -660,7 +656,7 @@ static int lvldb_database_set(lua_State *L) {
 static int lvldb_database_del(lua_State *L) {
 	DB *db = check_database(L, 1);
 
-	Slice key = Slice(lua_param_to_slice(L, 2));
+	Slice key = lua_to_slice(L, 2);
 
 	Status s = db->Delete(lvldb_wopt(L, 3), key);
 
@@ -735,12 +731,12 @@ static int lvldb_database_tostring(lua_State *L) {
 
 	Iterator* it = db->NewIterator(ReadOptions());
 
+	oss << "DB output:" << endl;
 	it->SeekToFirst();
 
 	if(!it->Valid())
 		oss << "Database is empty." << endl;
 	else {
-
 		//for (it->SeekToFirst(); it->Valid(); it->Next()) {
 		while(it->Valid()) {
 			oss << it->key().ToString() << " -> "  << it->value().ToString() << endl;
@@ -812,6 +808,20 @@ static int lvldb_iterator_next(lua_State *L) {
 	return 0;
 }
 
+static int lvldb_iterator_key(lua_State *L) {
+	Iterator *iter = check_iter(L);
+	Slice key = iter->key();
+
+	return 1;
+}
+
+static int lvldb_iterator_val(lua_State *L) {
+	Iterator *iter = check_iter(L);
+	Slice val = iter->value();
+
+	return 1;
+}
+
 static int lvldb_iterator_keystr(lua_State *L) {
 	Iterator *iter = check_iter(L);
 
@@ -876,8 +886,8 @@ static int lvldb_batch_tostring(lua_State *L) {
 static int lvldb_batch_put(lua_State *L) {
 	WriteBatch batch = *(check_writebatch(L, 1));
 
-	Slice key = Slice(lua_param_to_slice(L, 2));
-	Slice value = Slice(lua_param_to_slice(L, 3));
+	Slice key = lua_to_slice(L, 2);
+	Slice value = lua_to_slice(L, 3);
 
 	batch.Put(key, value);
 
@@ -890,7 +900,7 @@ static int lvldb_batch_put(lua_State *L) {
 static int lvldb_batch_del(lua_State *L) {
 	WriteBatch batch = *(check_writebatch(L, 1));
 
-	Slice key = Slice(lua_param_to_slice(L, 2));
+	Slice key = lua_to_slice(L, 2);
 
 	batch.Delete(key);
 
@@ -1019,7 +1029,6 @@ static const luaL_Reg lvldb_database_m[] = {
 		{ "put", lvldb_database_put },
 		{ "set", lvldb_database_set },
 		{ "get", lvldb_database_get },
-		{ "gett", lvldb_database_gett },
 		{ "delete", lvldb_database_del },
 		{ "iterator", lvldb_database_iterator },
 		{ "write", lvldb_database_write },
