@@ -812,54 +812,14 @@ static int lvldb_iterator_key(lua_State *L) {
 	Iterator *iter = check_iter(L);
 	Slice key = iter->key();
 
-	return 1;
+	return string_to_lua(L, key.ToString());
 }
 
 static int lvldb_iterator_val(lua_State *L) {
 	Iterator *iter = check_iter(L);
 	Slice val = iter->value();
 
-	return 1;
-}
-
-static int lvldb_iterator_keystr(lua_State *L) {
-	Iterator *iter = check_iter(L);
-
-	lua_pushstring(L, iter->key().ToString().c_str());
-
-	return 1;
-}
-
-static int lvldb_iterator_keynum(lua_State *L) {
-	Iterator *iter = check_iter(L);
-
-	lua_Number k;
-
-	k = lua_str2number(iter->value().ToString().c_str(), NULL);
-
-	lua_pushnumber(L, k);
-
-	return 1;
-}
-
-static int lvldb_iterator_valstr(lua_State *L) {
-	Iterator *iter = check_iter(L);
-
-	lua_pushstring(L, iter->value().ToString().c_str());
-
-	return 1;
-}
-
-static int lvldb_iterator_valnum(lua_State *L) {
-	Iterator *iter = check_iter(L);
-
-	lua_Number v;
-
-	v = slice2num(iter->value().ToString().c_str());
-
-	lua_pushnumber(L, v);
-
-	return 1;
+	return string_to_lua(L, val.ToString());
 }
 
 /**
@@ -1044,12 +1004,8 @@ static const struct luaL_Reg lvldb_iterator_m[] = {
 		{ "seekToLast", lvldb_iterator_seek_to_last },
 		{ "valid", lvldb_iterator_valid },
 		{ "next", lvldb_iterator_next },
-		{ "key", lvldb_iterator_keystr },
-		{ "keystr", lvldb_iterator_keystr },
-		{ "keynum", lvldb_iterator_keynum },
-		{ "value", lvldb_iterator_valstr },
-		{ "valstr", lvldb_iterator_valstr },
-		{ "valnum", lvldb_iterator_valnum },
+		{ "key", lvldb_iterator_key },
+		{ "value", lvldb_iterator_val },
 		{ NULL, NULL }
 };
 
