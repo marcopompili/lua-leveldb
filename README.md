@@ -12,10 +12,11 @@ Most of the basic options and functions are supported right now, but still not t
 
 Installation
 ------------
-The library is packed like a luaRock extension, check out [luarocks.org](http://luarocks.org/).
+The library is packed like a luarock extension, check out [luarocks.org](http://luarocks.org/).
   * Before installing be sure that you got LevelDB correctly installed for your Linux distribution.
   * To install execute make.sh as root, this script should build the library and install it as a luarock package.
   * To remove the library use remove.sh (as root) to remove the package and delete the built files.
+  * You can rebuild lua-leveldb using the rebuild.sh script.
 
 To build the latest version use the make script like this:
 ```
@@ -37,12 +38,12 @@ These are the current possible operation:
 
 Basic Example
 -------------
-This is a simple example about how to use the Lua extension for Google's LevelDB:
+This is a simple example about how to use the Lua extension for Google's LevelDB, just putting some data and getting it back:
 
 ```lua
-require 'leveldb'
+local leveldb = require 'leveldb'
 
-local opt = leveldb.options()
+opt = leveldb.options()
 opt.createIfMissing = true
 opt.errorIfExists = false
 
@@ -50,15 +51,22 @@ local test_key = 'key1'
 local test_val = 'value1'
 
 print ('opening test.db')
-local testdb = leveldb.open (opt, 'test.db')
+testdb = leveldb.open(opt, 'test.db')
 
 if leveldb.check(testdb)
 then
-	if testdb:put(test_key, test_val)
-	then
-		print ("Getting test " .. test_key .. " : " .. testdb:get(test_key))
-	end
+    if testdb:put(test_key, test_val)
+    then
+        print ('key1: '.. testdb:get(test_key))
+    end
 end
+
+leveldb.close(testdb)
+
+testdb = leveldb.open(opt, 'test.db')
+testdb:put('key2', 123456)
+
+print ('key2: ' .. testdb:get('key2'))
 
 leveldb.close(testdb)
 ```
