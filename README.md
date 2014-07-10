@@ -18,7 +18,12 @@ The library is packed like a luarock extension, check out [luarocks.org](http://
   * To remove the library use remove.sh (as root) to remove the package and delete the built files.
   * You can rebuild lua-leveldb using the rebuild.sh script.
 
-To build the latest version use the make script like this:
+You can install lua-leveldb with the nice luarocks packaging system (if you got Lua >= 5.2):
+```
+sudo luarocks install lua-leveldb
+```
+
+Or if you want to build the latest version locally use the make script like this:
 ```
 sudo ./make.sh 0.3 1
 ```
