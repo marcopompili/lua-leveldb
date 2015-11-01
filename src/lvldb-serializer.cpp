@@ -57,10 +57,8 @@ void LvLDBSerializer::buffer_data(unsigned char *out) {
 	//print_bytes(out, data_len);
 }
 
-extern "C" {
-
 int LvLDBSerializer::write(unsigned char *str, size_t len) {
-	if (len > UINT32_MAX)
+	if (len > std::numeric_limits<uint32_t>::max())
 		luaL_error(L, "buffer too long");
 
 	if (size - head < len) {
@@ -80,5 +78,4 @@ int LvLDBSerializer::write(unsigned char *str, size_t len) {
 	data_len += len;
 
 	return 0;
-}
 }

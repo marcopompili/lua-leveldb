@@ -9,6 +9,7 @@
 #define BUFFER_HPP_
 
 #include <cstring>
+#include <limits>
 
 extern "C" {
 #include <stdlib.h>
