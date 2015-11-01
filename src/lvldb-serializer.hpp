@@ -2,7 +2,7 @@
  * buffer.hpp
  *
  *  Created on: 05/lug/2014
- *      Author: marco
+ *      Author: Marco Pompili
  */
 
 #ifndef BUFFER_HPP_

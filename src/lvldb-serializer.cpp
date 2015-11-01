@@ -2,7 +2,7 @@
  * lvldb-serialzier.cpp
  *
  *  Created on: 06/lug/2014
- *      Author: marco
+ *      Author: Marco Pompili
  */
 
 #include "lvldb-serializer.hpp"
