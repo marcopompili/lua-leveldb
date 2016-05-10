@@ -166,7 +166,7 @@ Note that LevelDB library itself (included for convenience) is licensed under [B
 Contacts
 --------
 - Marco Pompili
-- [emarcs.org](http://www.emarcs.org)
+- [emarcs.org](http://blog.emarcs.org)
 
 [travis]: https://travis-ci.org/marcopompili/lua-leveldb
 [paypal-donations]: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ZCEWXHNPK8JXN
