@@ -22,6 +22,6 @@ endif
 clean:
 	@echo -e '\033[0;33mCleaning binaries:\033[0m'
 	rm -f leveldb.so
-	
+
 install:
 	@echo -e '\033[0;32mInstalling with luarocks\033[0m'
