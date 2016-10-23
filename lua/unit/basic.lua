@@ -1,6 +1,6 @@
 local leveldb = require 'leveldb'
 
-opt = leveldb.options()
+local opt = leveldb.options()
 opt.createIfMissing = true
 opt.errorIfExists = false
 
@@ -10,7 +10,7 @@ local test_val = 'value1'
 -- first run
 print ('opening test.db')
 
-testdb = leveldb.open(opt, 'test.db')
+local testdb = leveldb.open(opt, 'test.db')
 
 assert(leveldb.check(testdb), "inconsistent db")
 
