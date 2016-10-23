@@ -1,8 +1,8 @@
 lua-leveldb license
 -------------------
 
-The lua-leveldb code is licensed under the terms of the MIT license reproduced below. 
-This means that lua-leveldb is free software and can be used for both academic and 
+The lua-leveldb code is licensed under the terms of the MIT license reproduced below.
+This means that lua-leveldb is free software and can be used for both academic and
 commercial purposes at absolutely no cost.
 
 Note that leveldb library itself (included for convenience) is licensed under:
@@ -11,7 +11,7 @@ BSD-3 (http://opensource.org/licenses/BSD-3-Clause).
 ===============================================================================
 The MIT License (MIT)
 
-Copyright(c) 2011—2014 lua-leveldb author Marco Pompili
+Copyright(c) 2011—2016 lua-leveldb author Marco Pompili
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
