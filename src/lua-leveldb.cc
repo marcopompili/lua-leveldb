@@ -173,12 +173,20 @@ static void init_complex_metatable(lua_State *L, const char *metatable_name, con
 
 	// create methods table, & add it to the table of globals
 	lua_newtable(L);
+#if LUA_VERSION_NUM > 501
 	luaL_setfuncs(L, methods, 0);
+#else
+	luaL_register(L, NULL, methods);
+#endif
 	int methods_stack = lua_gettop(L);
 
 	// create meta-table for object, & add it to the registry
 	luaL_newmetatable(L, metatable_name);
+#if LUA_VERSION_NUM > 501
 	luaL_setfuncs(L, metamethods, 0); // fill meta-table
+#else
+	luaL_register(L, NULL, metamethods);
+#endif
 	int metatable_stack = lua_gettop(L);
 
 	lua_pushliteral(L, "__metatable");
@@ -215,7 +223,11 @@ static void init_metatable(lua_State *L, const char *metatable, const struct lua
 	lua_settable(L, -3); // meta-table.__index = meta-table
 
 	// meta-table already on the stack
+#if LUA_VERSION_NUM > 501
 	luaL_setfuncs(L, lib, 0);
+#else
+	luaL_register(L, NULL, lib);
+#endif
 	lua_pop(L, 1);
 }
 
@@ -1035,7 +1047,11 @@ LUALIB_API int luaopen_leveldb(lua_State *L) {
 	lua_setfield(L, -2, "_DESCRIPTION");
 
 	// LevelDB methods
+#if LUA_VERSION_NUM > 501
 	luaL_setfuncs(L, lvldb_leveldb_m, 0);
+#else
+	luaL_register(L, NULL, lvldb_leveldb_m);
+#endif
 
 	// initialize meta-tables
 	init_metatable(L, LVLDB_MT_DB, lvldb_database_m);
