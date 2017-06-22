@@ -13,7 +13,7 @@ TARGET=liblua-leveldb.so
 
 all: $(TARGET)
 
-$(TARGET):
+$(TARGET): src/lua-leveldb.cc
 	@echo -e '\033[0;34mBuilding target: $@\033[0m'
 ifneq (,$(wildcard /usr/include/leveldb/filter_policy.h))
 	$(CXX) src/lua-leveldb.cc src/lvldb-serializer.cpp $(CXXFLAGS) $(LIBFLAG) -I$(LUA_INCDIR) $(LDFLAGS) -o $(TARGET) -DLEVELDB_FILTER_POLICY_H=1
