@@ -20,7 +20,7 @@
 #define LVLDB_MT_OPT		"leveldb.opt"
 #define LVLDB_MT_ROPT		"leveldb.ropt"
 #define LVLDB_MT_WOPT		"leveldb.wopt"
-#define LVLDB_MT_DB			"leveldb.db"
+#define LVLDB_MT_DB		"leveldb.db"
 #define LVLDB_MT_ITER		"leveldb.iter"
 #define LVLDB_MT_BATCH		"leveldb.btch"
 
@@ -299,8 +299,12 @@ static string bool_to_string(int boolean) {
  *  Check for a DB type.
  */
 static DB *check_database(lua_State *L, int index) {
-	void *ud = luaL_checkudata(L, 1, LVLDB_MT_DB);
-	luaL_argcheck(L, ud != NULL, 1, "'database' expected");
+	// UD-type: light meta @ lvldb_open()
+// LuaJIT doesn't support luaL_checkudata on light userdata
+//	void *ud = luaL_checkudata(L, index, LVLDB_MT_DB);
+	DB *ud = (DB*) lua_touserdata(L, 1);
+	luaL_argcheck(L, ud != NULL, index, "'database' expected");
+	luaL_argcheck(L, lua_islightuserdata(L, index), index, "'database' expected");
 
 	return (DB *) ud;
 }
@@ -310,11 +314,10 @@ static DB *check_database(lua_State *L, int index) {
  */
 static Options *check_options(lua_State *L, int index) {
 	Options *opt;
-	luaL_checktype(L, 1, LUA_TUSERDATA);
+	luaL_checktype(L, index, LUA_TUSERDATA);
+	// UD-type: complex metatable @ luaopen_leveldb()
 	opt = (Options*)luaL_checkudata(L, index, LVLDB_MT_OPT);
-
-	if(opt == NULL)
-		luaL_argerror(L, index, "Options is NULL");
+	luaL_argcheck(L, opt != NULL, index, "'options' expected");
 
 	return opt;
 }
@@ -323,6 +326,8 @@ static Options *check_options(lua_State *L, int index) {
  * Check for a ReadOptions type.
  */
 static ReadOptions *check_read_options(lua_State *L, int index) {
+	luaL_checktype(L, index, LUA_TUSERDATA);
+	// UD-type: complex metatable @ luaopen_leveldb()
 	void *ud = luaL_checkudata(L, index, LVLDB_MT_ROPT);
 	luaL_argcheck(L, ud != NULL, index, "'writeOptions' expected");
 
@@ -333,6 +338,8 @@ static ReadOptions *check_read_options(lua_State *L, int index) {
  * Check for a WriteOptions type.
  */
 static WriteOptions *check_write_options(lua_State *L, int index) {
+	luaL_checktype(L, index, LUA_TUSERDATA);
+	// UD-type: complex metatable @ luaopen_leveldb()
 	void *ud = luaL_checkudata(L, index, LVLDB_MT_WOPT);
 	luaL_argcheck(L, ud != NULL, index, "'readOptions' expected");
 
@@ -343,20 +350,30 @@ static WriteOptions *check_write_options(lua_State *L, int index) {
  * Check for an Iterator type.
  */
 static Iterator *check_iter(lua_State *L) {
-	void *ud = luaL_checkudata(L, 1, LVLDB_MT_ITER);
+	luaL_checktype(L, 1, LUA_TUSERDATA);
+	// UD-type: light meta @ lvldb_database_iterator()
+// LuaJIT doesn't support luaL_checkudata on light userdata
+//	void *ud = luaL_checkudata(L, 1, LVLDB_MT_ITER);
+	Iterator *ud = (Iterator*) lua_touserdata(L, 1);
 	luaL_argcheck(L, ud != NULL, 1, "'iterator' expected");
+	luaL_argcheck(L, lua_islightuserdata(L, 1), 1, "'iterator' expected");
 
-	return (Iterator *) ud;
+	return ud;
 }
 
 /**
  * Check for a WriteBatch type.
  */
 static WriteBatch *check_writebatch(lua_State *L, int index) {
-	void *ud = luaL_checkudata(L, 1, LVLDB_MT_BATCH);
-	luaL_argcheck(L, ud != NULL, 1, "'batch' expected");
+	luaL_checktype(L, index, LUA_TUSERDATA);
+	// UD-type: light meta @ lvldb_batch()
+// LuaJIT doesn't support luaL_checkudata on light userdata
+//	void *ud = luaL_checkudata(L, 1, LVLDB_MT_BATCH);
+	WriteBatch *ud = (WriteBatch*) lua_touserdata(L, 1);
+	luaL_argcheck(L, ud != NULL, index, "'batch' expected");
+	luaL_argcheck(L, lua_islightuserdata(L, index), index, "'iterator' expected");
 
-	return (WriteBatch *) ud;
+	return ud;
 }
 
 /**
