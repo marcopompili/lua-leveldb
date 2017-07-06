@@ -228,14 +228,13 @@ using namespace leveldb;
  * types and the LevelDB's Slice.
  */
 static Slice lua_to_slice(lua_State *L, int i) {
-	LvLDBSerializer ser = LvLDBSerializer(L);
-	// write parameter into buffer
-	ser.set_lua_value(i);
+	// Note:
+	// http://leveldb.org/ says:
+	// "Arbitrary byte arrays
+	//  Both keys and values are treated as simple arrays of bytes"
+	const char *data = luaL_checkstring(L, i);
 
-	unsigned char *data = (unsigned char*)malloc(ser.buffer_len());
-	ser.buffer_data(data);
-
-	return Slice((const char*)data, ser.buffer_len());
+	return Slice(data, strlen(data));
 }
 
 /**
@@ -245,31 +244,11 @@ static Slice lua_to_slice(lua_State *L, int i) {
  * uses another function for conversion to Lua.
  */
 static int string_to_lua(lua_State *L, string value) {
-	const char *data = value.data();
-	const char **lua_val_type = &data; // type
-
-	string lua_string = value.substr(sizeof(int), value.length());
-	char *lua_param_data = (char*)lua_string.c_str(); // value
-
-	switch(**lua_val_type)
-	{
-		case LUA_TBOOLEAN: {
-			lua_pushboolean(L, *(char*)lua_param_data);
-			break;
-		}
-		case LUA_TNUMBER: {
-			lua_pushnumber(L, *(lua_Number*)lua_param_data);
-			break;
-		}
-		case LUA_TSTRING: {
-			lua_pushlstring(L, lua_string.c_str(), lua_string.length());
-			break;
-		}
-		default: {
-			luaL_error(L, "Error: Cannot convert to Lua type!");
-			break;
-		}
-	}
+	// Note:
+	// http://leveldb.org/ says:
+	// "Arbitrary byte arrays
+	//  Both keys and values are treated as simple arrays of bytes"
+	lua_pushlstring(L, value.c_str(), value.length());
 
 	return 1;
 }
