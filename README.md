@@ -2,7 +2,7 @@ lua-leveldb
 ===========
 Lua bindings for Google's LevelDB key/store database.
 
-[![PayPal](https://img.shields.io/badge/%24-paypal-f39c12.svg)][paypal-donations] [![Build Status](https://travis-ci.org/marcopompili/lua-leveldb.svg?branch=master)][travis]
+[![Build Status](https://travis-ci.org/marcopompili/lua-leveldb.svg?branch=master)][travis]
 
 From the GoogleCode page:
 "The LevelDB library provides a persistent key value store. Keys and values are arbitrary byte arrays.
@@ -163,10 +163,15 @@ commercial purposes at absolutely no cost, check the LICENSE file for details.
 
 Note that LevelDB library itself (included for convenience) is licensed under [BSD-3](http://opensource.org/licenses/BSD-3-Clause).
 
+Donate
+------
+ - [![PayPal](https://img.shields.io/badge/%24-paypal-f39c12.svg)][paypal-donations] 
+ - BTC: 1DVAWeg259xjFWToQ3bycyE19Qy7dAVDKR
+
 Contacts
 --------
-- Marco Pompili
-- [emarcs.org](http://blog.emarcs.org)
+- [twitter](https://twitter.com/pompilimrc)
+- [stackoverflow](https://stackoverflow.com/users/2555321/marcs)
 
 [travis]: https://travis-ci.org/marcopompili/lua-leveldb
 [paypal-donations]: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ZCEWXHNPK8JXN
