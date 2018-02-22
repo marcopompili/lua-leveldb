@@ -583,6 +583,31 @@ static int lvldb_database_get(lua_State *L) {
 }
 
 /**
+ * Method that checks the given key's existence from a DB.
+ * -----------------------------------------------------$
+ * This DB related method returns in Lua:
+ *  * True if key is in DB
+ *  * False in case of error, or key not exists.
+ */
+static int lvldb_database_has(lua_State *L) {
+	DB *db = check_database(L, 1);
+
+	Slice key = lua_to_slice(L, 2);
+	string value;
+
+	Status s = db->Get(lvldb_ropt(L, 3), key, &value);
+
+	if (s.ok()) {
+		lua_pushboolean(L, true);
+	}
+	else {
+		lua_pushboolean(L, false);
+	}
+
+	return 1;
+}
+
+/**
  *
  */
 static int lvldb_database_set(lua_State *L) {
@@ -968,6 +993,7 @@ static const luaL_Reg lvldb_database_m[] = {
 		{ "put", lvldb_database_put },
 		{ "set", lvldb_database_set },
 		{ "get", lvldb_database_get },
+		{ "has", lvldb_database_has },
 		{ "delete", lvldb_database_del },
 		{ "iterator", lvldb_database_iterator },
 		{ "write", lvldb_database_write },
