@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Author: Marco Pompili - marcs.pompili@gmail.com
+# Author: Marco Pompili - pompilimrc@gmail.com
 # Script file for installing the dev version of lua-leveldb.
 
 if [ $# -lt 2 ]
@@ -26,4 +26,4 @@ echo -e "Going for version $1 and revision $2..."
 
 echo -e "\033[0;32mlua-leveldb $VERSION-$REVISION\033[0m"
 
-$LUAROCKS make rockspec/lua-leveldb-$VERSION-$REVISION.rockspec
+$LUAROCKS --local make rockspec/lua-leveldb-$VERSION-$REVISION.rockspec

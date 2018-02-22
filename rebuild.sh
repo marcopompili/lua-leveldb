@@ -2,4 +2,4 @@
 
 ./remove.sh
 
-./make.sh 0.3 1 /usr/bin/luarocks
+./build.sh git 1 /usr/bin/luarocks
