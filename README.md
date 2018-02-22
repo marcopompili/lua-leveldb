@@ -29,6 +29,26 @@ Or if you want to build the latest version locally use the make script like this
 ```
 sudo ./make.sh 0.3 1
 ```
+
+Or if you want to build the latest version locally use the make like this (for Lua = 5.1):
+```
+make
+```
+
+Manual install (on Debian 8):
+```
+sudo cp liblua-leveldb.so /usr/local/lib/
+sudo mkdir /usr/local/lib/lua/5.1/
+cd /usr/local/lib/lua/5.1/
+sudo ln -s ../../liblua-leveldb.so lua-leveldb.so
+```
+
+Note - Library name collision with leveldb.so
+---------------------------------------------
+
+When LevelDB libraries are installed, there is a file with name `libleveldb.so` in `/usr/lib/`. When doing a `require 'leveldb'` in your lua-code, the loader code will find that file first. To make the loading unambiguous, it is necessary to refer this library as `liblua-leveldb.so`.
+See the below example code for `require 'lua-leveldb'`.
+
 Support
 -------
 The extension still not support the full set of operations permitted by the LevelDB library.
@@ -48,7 +68,7 @@ Basic Example
 This is a simple example about how to use the Lua extension for Google's LevelDB, just putting some data and getting it back:
 
 ```lua
-local leveldb = require 'leveldb'
+local leveldb = require 'lua-leveldb'
 
 opt = leveldb.options()
 opt.createIfMissing = true
@@ -153,7 +173,7 @@ The examples above have been adapted to be used as unit tests.
 
 Notes
 -----
-Lua-leveldb is compatible with Lua 5.2, unfortunately it is no more compatible with Lua 5.1.
+Lua-leveldb is compatible with Lua 5.1 and newer.
 
 License
 -------
