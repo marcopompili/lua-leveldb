@@ -19,8 +19,6 @@ int get_bool(lua_State *L, void *v);
 int set_bool(lua_State *L, void *v);
 int get_string(lua_State *L, void *v);
 int set_string(lua_State *L, void *v);
-int get_filter_policy(lua_State *L, void *v);
-int set_filter_policy(lua_State *L, void *v);
 
 int lvldb_options_tostring(lua_State *L);
 int lvldb_read_options(lua_State *L);

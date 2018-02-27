@@ -111,6 +111,17 @@ int lvldb_repair(lua_State *L) {
 }
 
 
+int lvldb_bloom_filter_policy(lua_State *L) {
+  luaL_checktype(L, 1, LUA_TUSERDATA);
+  Options *opt = (Options*)luaL_checkudata(L, 1, LVLDB_MT_OPT);
+  int bits_per_key = lua_tonumber(L, 2);
+  const FilterPolicy *fp = NewBloomFilterPolicy(bits_per_key);
+  
+  opt->filter_policy = fp;
+
+  return 0;
+}
+
 /**
  * Wrapping up the library into Lua
  * --------------------------------
@@ -129,6 +140,7 @@ static const luaL_Reg lvldb_leveldb_m[] = {
   { "repair ", lvldb_repair },
   { "batch", lvldb_batch },
   { "check", lvldb_check },
+  { "bloomFilterPolicy", lvldb_bloom_filter_policy },
   { NULL, NULL }
 };
 
@@ -140,7 +152,7 @@ static const luaL_Reg lvldb_options_m[] = {
 // options meta-methods
 static const luaL_Reg lvldb_options_meta[] = {
   { "__tostring", lvldb_options_tostring },
-  { NULL, NULL}
+  { NULL, NULL }
 };
 
 // options getters
@@ -267,14 +279,14 @@ extern "C" {
     lua_pushliteral(L, LUALEVELDB_DESCRIPTION);
     lua_setfield(L, -2, "_DESCRIPTION");
 
-    // LevelDB methods
+    // LevelDB functions
 #if LUA_VERSION_NUM > 501
     luaL_setfuncs(L, lvldb_leveldb_m, 0);
 #else
     luaL_register(L, NULL, lvldb_leveldb_m);
 #endif
 
-    // initialize meta-tables
+    // initialize meta-tables methods
     init_metatable(L, LVLDB_MT_DB, lvldb_database_m);
     init_complex_metatable(L, LVLDB_MT_OPT, lvldb_options_m, lvldb_options_meta, options_getters, options_setters);
     init_complex_metatable(L, LVLDB_MT_ROPT, lvldb_read_options_m, lvldb_read_options_meta, read_options_getters, read_options_setters);

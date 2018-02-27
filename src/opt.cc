@@ -66,17 +66,6 @@ int set_string(lua_State *L, void *v) {
   return 0;
 }
 
-int get_filter_policy(lua_State *L, void *v) {
-  FilterPolicy *fp = (FilterPolicy*) v;
-  lua_pushlightuserdata(L, fp);
-  return 1;
-}
-
-int set_filter_policy(lua_State *L, void *v) {
-  v = (FilterPolicy*)lua_touserdata(L, 3);
-  return 0;
-}
-
 /**
  * To string for the options type.
  */
