@@ -48,7 +48,7 @@ string bool_tostring(int boolean) {
 string pointer_tostring(void *p) {
   ostringstream oss (ostringstream::out);
 
-  if (p != nullptr)
+  if (p != NULL)
     oss << &p;
   else
     oss << "NULL";
