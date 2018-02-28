@@ -1,8 +1,8 @@
 package = "lua-leveldb"
-version = "git-1"
+version = "0.4-1"
 source = {
 	url = "git://github.com/marcopompili/lua-leveldb.git",
-	branch = "master"
+	tag = "0.4"
 }
 description = {
 	summary = "LevelDB extension for Lua.",
