@@ -10,9 +10,9 @@ OBJS=src/lua.o src/batch.o src/db.o src/iter.o src/opt.o src/utils.o src/lua-lev
 RM=rm -f
 TARGET=lualeveldb.so
 
-# Add a custom version below (5.1/5.2/5.3), tested on Arch Linux only
-LUA_VERSION=
-LUA_DIR=/usr
+# Add a custom version below (5.1/5.2/5.3)
+LUA_VERSION=5.1
+LUA_DIR=/usr/local
 LUA_LIBDIR=$(LUA_DIR)/lib/lua/$(LUA_VERSION)
 LUA_INCDIR=/usr/include/lua$(LUA_VERSION)
 LUA_SHAREDIR=$(LUA_DIR)/share/lua/$(LUA_VERSION)
