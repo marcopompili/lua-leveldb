@@ -4,11 +4,16 @@ opt = leveldb.options()
 opt.createIfMissing = true
 opt.errorIfExists = false
 
+-- setting the bloom filter into the options
+leveldb.bloomFilterPolicy(opt, 10)
+
+print(opt)
+
 local test_key = 'key1'
-local test_val = 'val1'
+local test_val = 'value1'
 
 print ('opening test.db')
-testdb = leveldb.open(opt, 'basic.db')
+testdb = leveldb.open(opt, 'filter.db')
 
 if leveldb.check(testdb)
 then
@@ -20,8 +25,8 @@ end
 
 leveldb.close(testdb)
 
-testdb = leveldb.open(opt, 'basic.db')
-testdb:put('key2', '123456')
+testdb = leveldb.open(opt, 'filter.db')
+testdb:put('key2', 123456)
 
 print ('key2: ' .. testdb:get('key2'))
 

@@ -1,4 +1,4 @@
-local leveldb = require 'leveldb'
+leveldb = require 'lualeveldb'
 
 local opt = leveldb.options()
 opt.createIfMissing = true
@@ -13,8 +13,6 @@ assert(db:put('key2s', 'value2'))
 assert(db:put('key2n', 2))
 assert(db:put('key3s', 'value3'))
 assert(db:put('key3n', 3.14))
-assert(db:put('keyb - true', true))
-assert(db:put('keyb - false', false))
 
 local iter = db:iterator()
 
@@ -22,10 +20,11 @@ iter:seekToFirst()
 
 while(iter:valid())
 do
-    local value = iter:value();
-    print(iter:key() .. ' => ' .. '(' .. type(value) .. ') ' .. tostring(value))
+   local key = iter:key()
+   local value = iter:value();
+   print(iter:key() .. ' => ' .. '(' .. type(value) .. ') ' .. tostring(value))
 
-    iter:next()
+   iter:next()
 end
 
 iter:del()
