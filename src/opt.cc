@@ -85,7 +85,8 @@ int lvldb_options_tostring(lua_State *L) {
       << "\nBlock size: " << opt->block_size
       << "\nBlock restart interval: " << opt->block_restart_interval
       << "\nCompression: " << (opt->compression == 1 ? "Snappy Compression" : "No Compression")
-      << "\nReuse logs: " << bool_tostring(opt->reuse_logs)
+      // Experimental
+      // << "\nReuse logs: " << bool_tostring(opt->reuse_logs)
       << "\nFilter policy: " << filter_tostring(opt->filter_policy) << endl;
 
   lua_pushstring(L, oss.str().c_str());
