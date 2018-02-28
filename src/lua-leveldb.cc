@@ -266,7 +266,7 @@ static const luaL_Reg lvldb_batch_m[] = {
 extern "C" {
 
   // Initialization
-  LUALIB_API int luaopen_liblualeveldb(lua_State *L) {
+  LUALIB_API int luaopen_lualeveldb(lua_State *L) {
     lua_newtable(L);
 
     // register module information
