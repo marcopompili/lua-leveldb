@@ -14,7 +14,7 @@ TARGET=lualeveldb.so
 LUA_VERSION=5.1
 LUA_DIR=/usr/local
 LUA_LIBDIR=$(LUA_DIR)/lib/lua/$(LUA_VERSION)
-LUA_INCDIR=/usr/include/lua$(LUA_VERSION)
+LUA_INCDIR=$(LUA_DIR)/include/lua$(LUA_VERSION)
 LUA_SHAREDIR=$(LUA_DIR)/share/lua/$(LUA_VERSION)
 
 
