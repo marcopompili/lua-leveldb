@@ -1,4 +1,4 @@
-leveldb = require 'lualeveldb'
+leveldb = require 'liblualeveldb'
 
 local opt = leveldb.options()
 opt.createIfMissing = true

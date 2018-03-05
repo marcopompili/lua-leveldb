@@ -1,4 +1,4 @@
-leveldb = require 'lualeveldb'
+leveldb = require 'liblualeveldb'
 
 --[[
 Lua >=5.3.3 extended the format option "%q" to work also with

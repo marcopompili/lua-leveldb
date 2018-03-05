@@ -1,5 +1,5 @@
-#include "lua.hpp"
-#include "lib.hpp"
+#include "lualibs.hpp"
+#include "lvldblib.hpp"
 #include "utils.hpp"
 
 using namespace leveldb;
