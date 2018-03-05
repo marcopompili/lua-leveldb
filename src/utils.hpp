@@ -1,7 +1,7 @@
 #include <sstream>
 
-#include "lua.hpp"
-#include "lib.hpp"
+#include "llua.hpp"
+#include "lvllib.hpp"
 
 // Lua Meta-tables names
 #define LVLDB_MOD_NAME		"leveldb"

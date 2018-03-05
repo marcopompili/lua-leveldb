@@ -106,3 +106,4 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+build.luarocks

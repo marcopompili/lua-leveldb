@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "lua.hpp"
+#include "llua.hpp"
 
 typedef int (*Xet_func)(lua_State *L, void *v);
 

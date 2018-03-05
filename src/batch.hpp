@@ -1,7 +1,7 @@
 #include <sstream>
 
-#include "lua.hpp"
-#include "lib.hpp"
+#include "llua.hpp"
+#include "lvllib.hpp"
 #include "utils.hpp"
 
 using namespace leveldb;
