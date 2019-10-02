@@ -2,8 +2,17 @@ language: C++
 
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y lua5.1 liblua5.1-dev lua5.2 liblua5.2-dev libsnappy-dev libleveldb-dev
+  - sudo apt-get install -y lua5.1 liblua5.1-dev lua5.2 liblua5.2-dev lua5.3 liblua5.3-dev libsnappy-dev libleveldb-dev
 
 install: true
 
-script: make
+matrix:
+  include:
+    - name: "Lua 5.1"
+      env: LUA_VERSION=5.1
+    - name: "Lua 5.2"
+      env: LUA_VERSION=5.2
+    - name: "Lua 5.3"
+      env: LUA_VERSION=5.3
+
+script: make LUA_VERSION=$LUA_VERSION

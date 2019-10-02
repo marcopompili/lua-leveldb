@@ -11,11 +11,11 @@ RM=rm -f
 TARGET=lualeveldb.so
 
 # Add a custom version below (5.1/5.2/5.3)
-LUA_VERSION=5.1
-LUA_DIR=/usr/local
-LUA_LIBDIR=$(LUA_DIR)/lib/lua/$(LUA_VERSION)
-LUA_INCDIR=$(LUA_DIR)/include/lua$(LUA_VERSION)
-LUA_SHAREDIR=$(LUA_DIR)/share/lua/$(LUA_VERSION)
+LUA_VERSION?=5.3
+LUA_PREFIX_DIR?=/usr
+LUA_LIBDIR=$(LUA_PREFIX_DIR)/lib/lua/$(LUA_VERSION)
+LUA_INCDIR=$(LUA_PREFIX_DIR)/include/lua$(LUA_VERSION)
+LUA_SHAREDIR=$(LUA_PREFIX_DIR)/share/lua/$(LUA_VERSION)
 
 
 $(TARGET): $(OBJS)
