@@ -28,7 +28,7 @@ Or if you want to build the latest Luarock locally use the make script like this
 
 Or if you want to build the latest binary locally use `make` like this (for Lua = 5.1):
 ```
-make
+LUA_VERSION=5.1 make
 ```
 
 ### Manually
@@ -38,7 +38,7 @@ The library is packed as a Luarock extension, check out [luarocks.org](http://lu
   * To remove the library use `remove.sh` (as `root`) to remove the package and delete the built files.
   * You can rebuild lua-leveldb using the `rebuild.sh` script.
 
-Manual install (on Debian 8):
+Manual (system-wide) installation (on Debian 8):
 ```
 sudo cp liblualeveldb.so /usr/local/lib/
 sudo mkdir /usr/local/lib/lua/5.1/
