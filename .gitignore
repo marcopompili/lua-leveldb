@@ -1,3 +1,6 @@
+# Luarocks
+build.luarocks/
+
 # Eclipse stuff
 .project
 .cproject
