@@ -6,8 +6,6 @@
 #define LUALEVELDB_DESCRIPTION	"Lua bindings for Google's LevelDB library."
 #define LUALEVELDB_LOGMODE	0
 
-using namespace std;
-using namespace leveldb;
 
 /**
  * Basic calls to LevelDB
@@ -18,14 +16,14 @@ using namespace leveldb;
  * Opens a DB connection, based on the given options and filename.
  */
 int lvldb_open(lua_State *L) {
-  DB *db;
-  Options *opt = check_options(L, 1);
+  leveldb::DB *db;
+  leveldb::Options *opt = check_options(L, 1);
   const char *filename = luaL_checkstring(L, 2);
 
-  Status s = DB::Open(*(opt), filename, &db);
+  leveldb::Status s = leveldb::DB::Open(*(opt), filename, &db);
 
   if (!s.ok())
-    cerr << "lvldb_open: Error opening creating database: " << s.ToString() << endl;
+    std::cerr << "lvldb_open: Error opening creating database: " << s.ToString() << std::endl;
   else {
     // Pushing pointer to the database in the stack
     lua_pushlightuserdata(L, db);
@@ -41,7 +39,7 @@ int lvldb_open(lua_State *L) {
  * Close an open DB instance.
  */
 int lvldb_close(lua_State *L) {
-  DB *db = (DB*) lua_touserdata(L, 1);
+  leveldb::DB *db = (leveldb::DB*) lua_touserdata(L, 1);
 
   delete db;
 
@@ -52,9 +50,9 @@ int lvldb_close(lua_State *L) {
  * Create an options object with the defaults values.
  */
 int lvldb_options(lua_State *L) {
-  Options *optp = (Options*)lua_newuserdata(L, sizeof(Options));
+  leveldb::Options *optp = (leveldb::Options*)lua_newuserdata(L, sizeof(leveldb::Options));
 
-  *(optp) = Options(); // set default values
+  *(optp) = leveldb::Options(); // set default values
 
   luaL_getmetatable(L, LVLDB_MT_OPT);
   lua_setmetatable(L, -2);
@@ -66,8 +64,8 @@ int lvldb_options(lua_State *L) {
  * Create a WriteBatch object.
  */
 int lvldb_batch(lua_State *L) {
-  WriteBatch batch; // initialization
-  WriteBatch *batchp = &batch; // store pointer
+  leveldb::WriteBatch batch; // initialization
+  leveldb::WriteBatch *batchp = &batch; // store pointer
 
   lua_pushlightuserdata(L, batchp);
   luaL_getmetatable(L, LVLDB_MT_BATCH);
@@ -80,7 +78,7 @@ int lvldb_batch(lua_State *L) {
  * Check for DB basic consistency.
  */
 int lvldb_check(lua_State *L) {
-  DB *db = (DB*) lua_touserdata(L, 1);
+  leveldb::DB *db = (leveldb::DB*) lua_touserdata(L, 1);
 
   lua_pushboolean(L, db != NULL ? true : false);
 
@@ -96,14 +94,14 @@ int lvldb_check(lua_State *L) {
  * be used to recover as much of the data as possible.
  */
 int lvldb_repair(lua_State *L) {
-  string dbname = luaL_checkstring(L, 1);
+  std::string dbname = luaL_checkstring(L, 1);
 
-  Status s = leveldb::RepairDB(dbname, lvldb_opt(L, 2));
+  leveldb::Status s = leveldb::RepairDB(dbname, lvldb_opt(L, 2));
 
   if(s.ok())
     lua_pushboolean(L, true);
   else {
-    cerr << "Error repairing database: " << s.ToString() << endl;
+    std::cerr << "Error repairing database: " << s.ToString() << std::endl;
     lua_pushboolean(L, false);
   }
 
@@ -113,9 +111,10 @@ int lvldb_repair(lua_State *L) {
 
 int lvldb_bloom_filter_policy(lua_State *L) {
   luaL_checktype(L, 1, LUA_TUSERDATA);
-  Options *opt = (Options*)luaL_checkudata(L, 1, LVLDB_MT_OPT);
+  leveldb::Options *opt = (leveldb::Options*)luaL_checkudata(L, 1, LVLDB_MT_OPT);
   int bits_per_key = lua_tonumber(L, 2);
-  const FilterPolicy *fp = NewBloomFilterPolicy(bits_per_key);
+  
+  const leveldb::FilterPolicy *fp = leveldb::NewBloomFilterPolicy(bits_per_key);
   
   opt->filter_policy = fp;
 
@@ -157,25 +156,25 @@ static const luaL_Reg lvldb_options_meta[] = {
 
 // options getters
 static const Xet_reg_pre options_getters[] = {
-  { "createIfMissing", get_bool, offsetof(Options, create_if_missing) },
-  { "errorIfExists", get_bool, offsetof(Options, error_if_exists) },
-  { "paranoidChecks", get_bool, offsetof(Options, paranoid_checks) },
-  { "writeBufferSize", get_size, offsetof(Options, write_buffer_size) },
-  { "maxOpenFiles", get_int, offsetof(Options, max_open_files) },
-  { "blockSize", get_size, offsetof(Options, block_size) },
-  { "blockRestartInterval", get_int, offsetof(Options, block_restart_interval) },
+  { "createIfMissing", get_bool, offsetof(leveldb::Options, create_if_missing) },
+  { "errorIfExists", get_bool, offsetof(leveldb::Options, error_if_exists) },
+  { "paranoidChecks", get_bool, offsetof(leveldb::Options, paranoid_checks) },
+  { "writeBufferSize", get_size, offsetof(leveldb::Options, write_buffer_size) },
+  { "maxOpenFiles", get_int, offsetof(leveldb::Options, max_open_files) },
+  { "blockSize", get_size, offsetof(leveldb::Options, block_size) },
+  { "blockRestartInterval", get_int, offsetof(leveldb::Options, block_restart_interval) },
   { NULL, NULL }
 };
 
 // options setters
 static const Xet_reg_pre options_setters[] = {
-  { "createIfMissing", set_bool, offsetof(Options, create_if_missing) },
-  { "errorIfExists", set_bool, offsetof(Options, error_if_exists) },
-  { "paranoidChecks", set_bool, offsetof(Options, paranoid_checks) },
-  { "writeBufferSize", set_size, offsetof(Options, write_buffer_size) },
-  { "maxOpenFiles", set_int, offsetof(Options, max_open_files) },
-  { "blockSize", set_size, offsetof(Options, block_size) },
-  { "blockRestartInterval", set_int, offsetof(Options, block_restart_interval) },
+  { "createIfMissing", set_bool, offsetof(leveldb::Options, create_if_missing) },
+  { "errorIfExists", set_bool, offsetof(leveldb::Options, error_if_exists) },
+  { "paranoidChecks", set_bool, offsetof(leveldb::Options, paranoid_checks) },
+  { "writeBufferSize", set_size, offsetof(leveldb::Options, write_buffer_size) },
+  { "maxOpenFiles", set_int, offsetof(leveldb::Options, max_open_files) },
+  { "blockSize", set_size, offsetof(leveldb::Options, block_size) },
+  { "blockRestartInterval", set_int, offsetof(leveldb::Options, block_restart_interval) },
   { NULL, NULL }
 };
 
@@ -192,15 +191,15 @@ static const luaL_Reg lvldb_read_options_meta[] = {
 
 // read options getters
 static const Xet_reg_pre read_options_getters[] = {
-  { "verifyChecksum", get_bool, offsetof(ReadOptions, verify_checksums) },
-  { "fillCache", get_bool, offsetof(ReadOptions, fill_cache) },
+  { "verifyChecksum", get_bool, offsetof(leveldb::ReadOptions, verify_checksums) },
+  { "fillCache", get_bool, offsetof(leveldb::ReadOptions, fill_cache) },
   { NULL, NULL }
 };
 
 // read options setters
 static const Xet_reg_pre read_options_setters[] = {
-  { "verifyChecksum", set_bool, offsetof(ReadOptions, verify_checksums) },
-  { "fillCache", set_bool, offsetof(ReadOptions, fill_cache) },
+  { "verifyChecksum", set_bool, offsetof(leveldb::ReadOptions, verify_checksums) },
+  { "fillCache", set_bool, offsetof(leveldb::ReadOptions, fill_cache) },
   { NULL, NULL }
 };
 
@@ -217,13 +216,13 @@ static const luaL_Reg lvldb_write_options_meta[] = {
 
 // write options getters
 static const Xet_reg_pre write_options_getters[] = {
-  { "sync", get_bool, offsetof(WriteOptions, sync) },
+  { "sync", get_bool, offsetof(leveldb::WriteOptions, sync) },
   { NULL, NULL }
 };
 
 // write options setters
 static const Xet_reg_pre write_options_setters[] = {
-  { "sync", set_bool, offsetof(WriteOptions, sync) },
+  { "sync", set_bool, offsetof(leveldb::WriteOptions, sync) },
   { NULL, NULL }
 };
 

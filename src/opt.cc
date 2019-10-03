@@ -1,8 +1,5 @@
 #include "opt.hpp"
 
-using namespace std;
-using namespace leveldb;
-
 /**
  * Basic setters and getters
  * -------------------------
@@ -70,9 +67,9 @@ int set_string(lua_State *L, void *v) {
  * To string for the options type.
  */
 int lvldb_options_tostring(lua_State *L) {
-  Options *opt = check_options(L, 1);
+  leveldb::Options *opt = check_options(L, 1);
 
-  ostringstream oss (ostringstream::out);
+  std::ostringstream oss (std::ostringstream::out);
   oss << "Comparator: " << opt->comparator->Name()
       << "\nCreate if missing: " << bool_tostring(opt->create_if_missing)
       << "\nError if exists: " << bool_tostring(opt->error_if_exists)
@@ -87,7 +84,7 @@ int lvldb_options_tostring(lua_State *L) {
       << "\nCompression: " << (opt->compression == 1 ? "Snappy Compression" : "No Compression")
       // Experimental
       // << "\nReuse logs: " << bool_tostring(opt->reuse_logs)
-      << "\nFilter policy: " << filter_tostring(opt->filter_policy) << endl;
+      << "\nFilter policy: " << filter_tostring(opt->filter_policy) << std::endl;
 
   lua_pushstring(L, oss.str().c_str());
 
@@ -98,9 +95,9 @@ int lvldb_options_tostring(lua_State *L) {
  * Create a ReadOptions object.
  */
 int lvldb_read_options(lua_State *L) {
-  ReadOptions *ropt = (ReadOptions*)lua_newuserdata(L, sizeof(ReadOptions));
+  leveldb::ReadOptions *ropt = (leveldb::ReadOptions*)lua_newuserdata(L, sizeof(leveldb::ReadOptions));
 
-  *(ropt) = ReadOptions(); // set default values
+  *(ropt) = leveldb::ReadOptions(); // set default values
 
   luaL_getmetatable(L, LVLDB_MT_ROPT);
   lua_setmetatable(L, -2);
@@ -112,12 +109,12 @@ int lvldb_read_options(lua_State *L) {
  * To string function for the ReadOptions object.
  */
 int lvldb_read_options_tostring(lua_State *L) {
-  ReadOptions *ropt = check_read_options(L, 1);
+  leveldb::ReadOptions *ropt = check_read_options(L, 1);
 
-  ostringstream oss (ostringstream::out);
+  std::ostringstream oss (std::ostringstream::out);
   oss << "Verify checksum: " << bool_tostring(ropt->verify_checksums)
       << "\nFill cache: " << bool_tostring(ropt->fill_cache)
-      << "\nSnapshot: " << ropt->snapshot << endl;
+      << "\nSnapshot: " << ropt->snapshot << std::endl;
 
   lua_pushstring(L, oss.str().c_str());
 
@@ -128,9 +125,9 @@ int lvldb_read_options_tostring(lua_State *L) {
  * Create a WriteOptions object.
  */
 int lvldb_write_options(lua_State *L) {
-  WriteOptions *wopt = (WriteOptions*)lua_newuserdata(L, sizeof(WriteOptions));
+  leveldb::WriteOptions *wopt = (leveldb::WriteOptions*)lua_newuserdata(L, sizeof(leveldb::WriteOptions));
 
-  *(wopt) = WriteOptions(); // set default values
+  *(wopt) = leveldb::WriteOptions(); // set default values
 
   luaL_getmetatable(L, LVLDB_MT_WOPT);
   lua_setmetatable(L, -2);
@@ -142,10 +139,10 @@ int lvldb_write_options(lua_State *L) {
  * To string function for the WriteOptions object.
  */
 int lvldb_write_options_tostring(lua_State *L) {
-  WriteOptions *wopt = check_write_options(L, 1);
+  leveldb::WriteOptions *wopt = check_write_options(L, 1);
 
-  ostringstream oss (ostringstream::out);
-  oss << "Sync: " << bool_tostring(wopt->sync) << endl;
+  std::ostringstream oss (std::ostringstream::out);
+  oss << "Sync: " << bool_tostring(wopt->sync) << std::endl;
 
   lua_pushstring(L, oss.str().c_str());
 

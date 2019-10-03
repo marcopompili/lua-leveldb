@@ -1,21 +1,18 @@
 #include "db.hpp"
 
-using namespace std;
-using namespace leveldb;
-
 /**
  *  Check for a DB type.
  */
-DB *check_database(lua_State *L, int index) {
+leveldb::DB *check_database(lua_State *L, int index) {
   luaL_checktype(L, 1, LUA_TLIGHTUSERDATA);
   // UD-type: light meta @ lvldb_open()
   // LuaJIT doesn't support luaL_checkudata on light userdata
   // void *ud = luaL_checkudata(L, index, LVLDB_MT_DB);
-  DB *ud = (DB*) lua_touserdata(L, 1);
+  leveldb::DB *ud = (leveldb::DB*) lua_touserdata(L, 1);
   luaL_argcheck(L, ud != NULL, index, "'database' expected");
   luaL_argcheck(L, lua_islightuserdata(L, index), index, "'database' expected");
 
-  return (DB *) ud;
+  return (leveldb::DB *) ud;
 }
 
 /**
@@ -34,17 +31,17 @@ DB *check_database(lua_State *L, int index) {
  *   * False in case of error.
  */
 int lvldb_database_put(lua_State *L) {
-  DB *db = check_database(L, 1);
+  leveldb::DB *db = check_database(L, 1);
 
-  Slice key = lua_to_slice(L, 2);
-  Slice value = lua_to_slice(L, 3);
+  leveldb::Slice key = lua_to_slice(L, 2);
+  leveldb::Slice value = lua_to_slice(L, 3);
 
-  Status s = db->Put(lvldb_wopt(L ,4), key, value);
+  leveldb::Status s = db->Put(lvldb_wopt(L ,4), key, value);
 
   if (s.ok())
     lua_pushboolean(L, true);
   else {
-    cerr << "Error inserting key/value: " << s.ToString() << endl;
+    std::cerr << "Error inserting key/value: " << s.ToString() << std::endl;
     lua_pushboolean(L, false);
   }
 
@@ -59,18 +56,18 @@ int lvldb_database_put(lua_State *L) {
  *  * False in case of error.
  */
 int lvldb_database_get(lua_State *L) {
-  DB *db = check_database(L, 1);
+  leveldb::DB *db = check_database(L, 1);
 
-  Slice key = lua_to_slice(L, 2);
-  string value;
+  leveldb::Slice key = lua_to_slice(L, 2);
+  std::string value;
 
-  Status s = db->Get(lvldb_ropt(L, 3), key, &value);
+  leveldb::Status s = db->Get(lvldb_ropt(L, 3), key, &value);
 
   if (s.ok()) {
     string_to_lua(L, value);
   }
   else {
-    cerr << "Error getting value (get): " << s.ToString() << endl;
+    std::cerr << "Error getting value (get): " << s.ToString() << std::endl;
     lua_pushboolean(L, false);
   }
 
@@ -85,12 +82,12 @@ int lvldb_database_get(lua_State *L) {
  *  * False in case of error, or key not exists.
  */
 int lvldb_database_has(lua_State *L) {
-  DB *db = check_database(L, 1);
+  leveldb::DB *db = check_database(L, 1);
 
-  Slice key = lua_to_slice(L, 2);
-  string value;
+  leveldb::Slice key = lua_to_slice(L, 2);
+  std::string value;
 
-  Status s = db->Get(lvldb_ropt(L, 3), key, &value);
+  leveldb::Status s = db->Get(lvldb_ropt(L, 3), key, &value);
 
   if (s.ok()) {
     lua_pushboolean(L, true);
@@ -106,8 +103,8 @@ int lvldb_database_has(lua_State *L) {
  *
  */
 int lvldb_database_set(lua_State *L) {
-  DB *db = check_database(L, 1);
-  Slice value = lua_to_slice(L, 2);
+  leveldb::DB *db = check_database(L, 1);
+  leveldb::Slice value = lua_to_slice(L, 2);
 
   // #ifdef __x86_64__ || __ppc64__
 #ifdef __x86_64__
@@ -118,7 +115,7 @@ int lvldb_database_set(lua_State *L) {
 
   bool found = false;
 
-  Iterator *it = db->NewIterator(lvldb_ropt(L, 3));
+  leveldb::Iterator *it = db->NewIterator(lvldb_ropt(L, 3));
 
   /*
    *  initialization from the end, usually faster
@@ -140,7 +137,7 @@ int lvldb_database_set(lua_State *L) {
     //
     //		Slice key = Slice(id_str);
 
-    Status s = db->Put(WriteOptions(), "0", value);
+    leveldb::Status s = db->Put(leveldb::WriteOptions(), "0", value);
 
     assert(s.ok());
   }
@@ -153,16 +150,16 @@ int lvldb_database_set(lua_State *L) {
 }
 
 int lvldb_database_del(lua_State *L) {
-  DB *db = check_database(L, 1);
+  leveldb::DB *db = check_database(L, 1);
 
-  Slice key = lua_to_slice(L, 2);
+  leveldb::Slice key = lua_to_slice(L, 2);
 
-  Status s = db->Delete(lvldb_wopt(L, 3), key);
+  leveldb::Status s = db->Delete(lvldb_wopt(L, 3), key);
 
   if (s.ok())
     lua_pushboolean(L, true);
   else {
-    cerr << "Error deleting key/value entry: " << s.ToString() << endl;
+    std::cerr << "Error deleting key/value entry: " << s.ToString() << std::endl;
     lua_pushboolean(L, false);
   }
 
@@ -178,9 +175,9 @@ int lvldb_database_del(lua_State *L) {
  * Method that creates an iterator.
  */
 int lvldb_database_iterator(lua_State *L) {
-  DB *db = check_database(L, 1);
+  leveldb::DB *db = check_database(L, 1);
 
-  Iterator *it = db->NewIterator(lvldb_ropt(L, 2));
+  leveldb::Iterator *it = db->NewIterator(lvldb_ropt(L, 2));
   lua_pushlightuserdata(L, it);
 
   luaL_getmetatable(L, LVLDB_MT_ITER);
@@ -191,11 +188,11 @@ int lvldb_database_iterator(lua_State *L) {
 
 //TODO test it
 int lvldb_database_write(lua_State *L) {
-  DB *db = check_database(L, 1);
+  leveldb::DB *db = check_database(L, 1);
 
-  WriteBatch batch = *(check_writebatch(L, 2));
+  leveldb::WriteBatch batch = *(check_writebatch(L, 2));
 
-  Status s = db->Write(lvldb_wopt(L, 3), &batch);
+  leveldb::Status s = db->Write(lvldb_wopt(L, 3), &batch);
 
   return 0;
 }
@@ -209,9 +206,9 @@ int lvldb_database_write(lua_State *L) {
  * the read will operate on an implicit snapshot of the current state.
  */
 int lvldb_database_snapshot(lua_State *L) {
-  DB *db = check_database(L, 1);
+  leveldb::DB *db = check_database(L, 1);
 
-  const Snapshot *snapshot = db->GetSnapshot();
+  const leveldb::Snapshot *snapshot = db->GetSnapshot();
 
   lua_pushlightuserdata(L, (void*)snapshot);
 
@@ -225,23 +222,23 @@ int lvldb_database_snapshot(lua_State *L) {
  * Just prints the whole set of key,values from a DB.
  */
 int lvldb_database_tostring(lua_State *L) {
-  DB *db = check_database(L, 1);
-  ostringstream oss (ostringstream::out);
+  leveldb::DB *db = check_database(L, 1);
+  std::ostringstream oss (std::ostringstream::out);
 
-  Iterator* it = db->NewIterator(ReadOptions());
+  leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
 
-  oss << "DB output:" << endl;
+  oss << "DB output:" << std::endl;
   it->SeekToFirst();
 
   if(!it->Valid())
-    oss << "Database is empty." << endl;
+    oss << "Database is empty." << std::endl;
   else {
     //for (it->SeekToFirst(); it->Valid(); it->Next()) {
     while(it->Valid()) {
-      oss << it->key().ToString() << " -> "  << it->value().ToString() << endl;
+      oss << it->key().ToString() << " -> "  << it->value().ToString() << std::endl;
 
 #ifdef LUALEVELDB_LOGMODE
-      //cout << "LOG: " << it->key().ToString() << " -> "  << it->value().ToString() << endl;
+      //std::cout << "LOG: " << it->key().ToString() << " -> "  << it->value().ToString() << std::endl;
 #endif
 
       it->Next();

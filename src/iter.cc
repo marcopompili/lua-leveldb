@@ -1,18 +1,16 @@
 #include "iter.hpp"
 
-using namespace leveldb;
-
 /**
  * Check for an Iterator type.
  */
-Iterator *check_iter(lua_State *L) {
+leveldb::Iterator *check_iter(lua_State *L) {
   luaL_checktype(L, 1, LUA_TLIGHTUSERDATA);
   // UD-type: light meta @ lvldb_database_iterator()
 	
   // LuaJIT doesn't support luaL_checkudata on light userdata
   //void *ud = luaL_checkudata(L, 1, LVLDB_MT_ITER);
 	
-  Iterator *ud = (Iterator*) lua_touserdata(L, 1);
+  leveldb::Iterator *ud = (leveldb::Iterator*) lua_touserdata(L, 1);
   luaL_argcheck(L, ud != NULL, 1, "'iterator' expected");
   luaL_argcheck(L, lua_islightuserdata(L, 1), 1, "'iterator' expected");
 
@@ -20,7 +18,7 @@ Iterator *check_iter(lua_State *L) {
 }
 
 int lvldb_iterator_delete(lua_State *L) {
-  Iterator *iter = check_iter(L);
+  leveldb::Iterator *iter = check_iter(L);
 
   delete iter;
 
@@ -28,7 +26,7 @@ int lvldb_iterator_delete(lua_State *L) {
 }
 
 int lvldb_iterator_seek(lua_State *L) {
-  Iterator *iter = check_iter(L);
+  leveldb::Iterator *iter = check_iter(L);
 
   std::string start = luaL_checkstring(L, 2);
 
@@ -38,7 +36,7 @@ int lvldb_iterator_seek(lua_State *L) {
 }
 
 int lvldb_iterator_seek_to_first(lua_State *L) {
-  Iterator *iter = check_iter(L);
+  leveldb::Iterator *iter = check_iter(L);
 
   iter->SeekToFirst();
 
@@ -46,7 +44,7 @@ int lvldb_iterator_seek_to_first(lua_State *L) {
 }
 
 int lvldb_iterator_seek_to_last(lua_State *L) {
-  Iterator *iter = check_iter(L);
+  leveldb::Iterator *iter = check_iter(L);
 
   iter->SeekToLast();
 
@@ -54,7 +52,7 @@ int lvldb_iterator_seek_to_last(lua_State *L) {
 }
 
 int lvldb_iterator_valid(lua_State *L) {
-  Iterator *iter = check_iter(L);
+  leveldb::Iterator *iter = check_iter(L);
 
   lua_pushboolean(L, iter->Valid());
 
@@ -62,7 +60,7 @@ int lvldb_iterator_valid(lua_State *L) {
 }
 
 int lvldb_iterator_next(lua_State *L) {
-  Iterator *iter = check_iter(L);
+  leveldb::Iterator *iter = check_iter(L);
 
   iter->Next();
 
@@ -70,15 +68,15 @@ int lvldb_iterator_next(lua_State *L) {
 }
 
 int lvldb_iterator_key(lua_State *L) {
-  Iterator *iter = check_iter(L);
-  Slice key = iter->key();
+  leveldb::Iterator *iter = check_iter(L);
+  leveldb::Slice key = iter->key();
 
   return string_to_lua(L, key.ToString());
 }
 
 int lvldb_iterator_val(lua_State *L) {
-  Iterator *iter = check_iter(L);
-  Slice val = iter->value();
+  leveldb::Iterator *iter = check_iter(L);
+  leveldb::Slice val = iter->value();
 
   return string_to_lua(L, val.ToString());
 }

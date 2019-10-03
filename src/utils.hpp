@@ -12,24 +12,21 @@
 #define LVLDB_MT_ITER		"leveldb.iter"
 #define LVLDB_MT_BATCH		"leveldb.btch"
 
-using namespace std;
-using namespace leveldb;
+leveldb::Slice lua_to_slice(lua_State*, int);
+int string_to_lua(lua_State*, std::string);
+std::string bool_tostring(int);
+std::string pointer_tostring(void*);
+std::string filter_tostring(const leveldb::FilterPolicy*);
 
-Slice lua_to_slice(lua_State *L, int i);
-int string_to_lua(lua_State *L, string value);
-string bool_tostring(int boolean);
-string pointer_tostring(void *p);
-string filter_tostring(const FilterPolicy *fp);
+leveldb::Options *check_options(lua_State*, int);
+leveldb::ReadOptions *check_read_options(lua_State*, int);
+leveldb::WriteOptions *check_write_options(lua_State*, int);
 
-Options *check_options(lua_State *L, int index);
-ReadOptions *check_read_options(lua_State *L, int index);
-WriteOptions *check_write_options(lua_State *L, int index);
-
-WriteBatch *check_writebatch(lua_State *L, int index);
+leveldb::WriteBatch *check_writebatch(lua_State*, int);
 
 /**
  * Type checking macros.
  */
-#define lvldb_opt(L, l) ( lua_gettop(L) >= l ? *(check_options(L, l)) : Options() )
-#define lvldb_ropt(L, l) ( lua_gettop(L) >= l ? *(check_read_options(L, l)) : ReadOptions() )
-#define lvldb_wopt(L, l) ( lua_gettop(L) >= l ? *(check_write_options(L, l)) : WriteOptions() )
+#define lvldb_opt(L, l) ( lua_gettop(L) >= l ? *(check_options(L, l)) : leveldb::Options() )
+#define lvldb_ropt(L, l) ( lua_gettop(L) >= l ? *(check_read_options(L, l)) : leveldb::ReadOptions() )
+#define lvldb_wopt(L, l) ( lua_gettop(L) >= l ? *(check_write_options(L, l)) : leveldb::WriteOptions() )
