@@ -109,3 +109,5 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# GDB
+.gdb_history
