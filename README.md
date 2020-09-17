@@ -2,7 +2,7 @@ lua-leveldb
 ===========
 Lua bindings for Google's LevelDB key/store database.
 
-[![Build Status](https://travis-ci.org/marcopompili/lua-leveldb.svg?branch=master)][travis]
+[![Build Status](https://travis-ci.org/marcopompili/lua-leveldb.svg?branch=master)][travis] [![](https://img.shields.io/luarocks/v/marcopompili/lua-leveldb)](https://luarocks.org/modules/marcopompili/lua-leveldb)
 
 From the GoogleCode page:
 "The LevelDB library provides a persistent key value store. Keys and values are arbitrary byte arrays.
