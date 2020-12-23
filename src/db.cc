@@ -216,7 +216,18 @@ int lvldb_database_write(lua_State *L)
 
   leveldb::Status s = db->Write(lvldb_wopt(L, 3), check_writebatch(L, 2));
 
-  return 0;
+  if (s.ok())
+  {
+    lua_pushboolean(L, true);
+    return 1;
+  }
+  else
+  {
+    //std::cerr << "Error getting value (get): " << s.ToString() << std::endl;
+    lua_pushboolean(L, false);
+    string_to_lua(L, s.ToString());
+  }
+  return 2;
 }
 
 /**
