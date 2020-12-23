@@ -58,7 +58,7 @@ void init_complex_metatable(lua_State *L, const char *metatable_name, const luaL
 #if LUA_VERSION_NUM > 501
   luaL_setfuncs(L, methods, 0);
 #else
-  luaL_register(L, NULL, methods);
+  luaL_openlib(L, NULL, methods, 0);
 #endif
 
   int methods_stack = lua_gettop(L);
@@ -70,7 +70,7 @@ void init_complex_metatable(lua_State *L, const char *metatable_name, const luaL
 #if LUA_VERSION_NUM > 501
   luaL_setfuncs(L, metamethods, 0);
 #else
-  luaL_register(L, NULL, metamethods);
+  luaL_openlib(L, NULL, metamethods, 0);
 #endif
   
   int metatable_stack = lua_gettop(L);
@@ -95,44 +95,21 @@ void init_complex_metatable(lua_State *L, const char *metatable_name, const luaL
   lua_settop(L, methods_stack-1);
 }
 
-/**
- * Procedure for adding a meta-table into the stack.
- */
-void metatable_func(lua_State *L, const char *metatable, const struct luaL_Reg lib[]) {
-
-  // let's build the function meta-table
-  if (luaL_newmetatable(L, metatable) == 0)
-    fprintf(stderr, "Warning: metatable %s is already set", metatable);
-
-  lua_pushstring(L, "__index"); // meta-table already in the stack
-  lua_pushvalue(L, -2);         // push the meta-table
-  lua_settable(L, -3);          // meta-table.__index = meta-table
-
-  // meta-table already on the stack
-#if LUA_VERSION_NUM > 501
-  luaL_setfuncs(L, lib, 0);
-#else
-  luaL_register(L, NULL, lib);
-#endif
-  lua_pop(L, 1);
-}
-
-
 void init_metatable(lua_State *L, const char *metatable, const struct luaL_Reg lib[]) {
-
+  
   // let's build the function meta-table
   if (luaL_newmetatable(L, metatable) == 0)
     fprintf(stderr, "Warning: metatable %s is already set", metatable);
 
-  lua_pushstring(L, "__index"); // meta-table already in the stack
+  lua_pushliteral(L, "__index"); // meta-table already in the stack
   lua_pushvalue(L, -2); // push the meta-table
-  lua_settable(L, -3); // meta-table.__index = meta-table
+  lua_rawset(L, -3);  // meta-table.__index = meta-table
 
   // meta-table already on the stack
 #if LUA_VERSION_NUM > 501
   luaL_setfuncs(L, lib, 0);
 #else
-  luaL_register(L, NULL, lib);
+  luaL_openlib(L, NULL, lib, 0);
 #endif
   lua_pop(L, 1);
 }
