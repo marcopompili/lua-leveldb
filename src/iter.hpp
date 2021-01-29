@@ -4,7 +4,7 @@
 
 leveldb::Iterator *check_iter(lua_State*);
 
-int lvldb_iterator_delete(lua_State*);
+int lvldb_iterator_del(lua_State*);
 int lvldb_iterator_seek(lua_State*);
 int lvldb_iterator_seek_to_first(lua_State*);
 int lvldb_iterator_seek_to_last(lua_State*);

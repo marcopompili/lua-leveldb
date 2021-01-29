@@ -9,7 +9,7 @@
  * To string function for the WriteBatch object.
  */
 int lvldb_batch_tostring(lua_State *L) {
-  leveldb::WriteBatch batch = *(check_writebatch(L, 1));
+  //leveldb::WriteBatch *batch = check_writebatch(L, 1);
 
   std::ostringstream oss (std::ostringstream::out);
   oss << "Batch" << std::endl;
@@ -23,12 +23,11 @@ int lvldb_batch_tostring(lua_State *L) {
  * Put a key,value into the batch.
  */
 int lvldb_batch_put(lua_State *L) {
-  leveldb::WriteBatch batch = *(check_writebatch(L, 1));
-
+  leveldb::WriteBatch *batch = check_writebatch(L, 1);
   leveldb::Slice key = lua_to_slice(L, 2);
   leveldb::Slice value = lua_to_slice(L, 3);
 
-  batch.Put(key, value);
+  batch->Put(key, value);
 
   return 0;
 }
@@ -37,11 +36,11 @@ int lvldb_batch_put(lua_State *L) {
  * Delete a key from the batch.
  */
 int lvldb_batch_del(lua_State *L) {
-  leveldb::WriteBatch batch = *(check_writebatch(L, 1));
+  leveldb::WriteBatch *batch = check_writebatch(L, 1);
 
   leveldb::Slice key = lua_to_slice(L, 2);
 
-  batch.Delete(key);
+  batch->Delete(key);
 
   return 0;
 }
@@ -50,9 +49,18 @@ int lvldb_batch_del(lua_State *L) {
  * Clear the whole batch.
  */
 int lvldb_batch_clear(lua_State *L) {
-  leveldb::WriteBatch batch = *(check_writebatch(L, 1));
+  leveldb::WriteBatch *batch = check_writebatch(L, 1);
 
-  batch.Clear();
+  batch->Clear();
 
+  return 0;
+}
+
+/**
+ * Free leveldb::WriteBatch 
+ */
+int lvldb_batch_release(lua_State *L) {
+  leveldb::WriteBatch *batch = check_writebatch(L, 1);
+  delete batch;
   return 0;
 }

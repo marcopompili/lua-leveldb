@@ -4,20 +4,12 @@
  * Check for an Iterator type.
  */
 leveldb::Iterator *check_iter(lua_State *L) {
-  luaL_checktype(L, 1, LUA_TLIGHTUSERDATA);
-  // UD-type: light meta @ lvldb_database_iterator()
-	
-  // LuaJIT doesn't support luaL_checkudata on light userdata
-  //void *ud = luaL_checkudata(L, 1, LVLDB_MT_ITER);
-	
-  leveldb::Iterator *ud = (leveldb::Iterator*) lua_touserdata(L, 1);
+  leveldb::Iterator **ud = (leveldb::Iterator**) luaL_checkudata(L, 1, LVLDB_MT_ITER);
   luaL_argcheck(L, ud != NULL, 1, "'iterator' expected");
-  luaL_argcheck(L, lua_islightuserdata(L, 1), 1, "'iterator' expected");
-
-  return ud;
+  return ud[0];
 }
 
-int lvldb_iterator_delete(lua_State *L) {
+int lvldb_iterator_del(lua_State *L) {
   leveldb::Iterator *iter = check_iter(L);
 
   delete iter;

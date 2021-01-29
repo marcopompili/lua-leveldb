@@ -62,6 +62,9 @@ These are the current possible operation:
   * Partial access to most important options settings is supported.
   * Iterators with seek and iteration operations are supported.
   * Atomic batch updates supported.
+  * LRUCache supported.
+  * Snapshot supported.
+  * Bloom Filter supported.
   * Experimental support for unique values.
   * Added support for storing string, numeric and boolean values.
   * ToString support for various objects.
@@ -71,11 +74,18 @@ Basic Example
 This is a simple example about how to use the Lua extension for Google's LevelDB, just putting some data and getting it back:
 
 ```lua
-leveldb = require 'lualeveldb'
+local leveldb = require 'lualeveldb'
 
-opt = leveldb.options()
+local opt = leveldb.options()
 opt.createIfMissing = true
 opt.errorIfExists = false
+opt:newLRUCache(1024*1024*8) -- 8M LRU Cache
+
+local wopt = leveldb.writeOptions()
+wopt.sync = true --set flag for synchronous write operation
+
+local ropt = leveldb.readOptions()
+ropt.fillCache = false -- set flag for do not cache result after read
 
 local test_key = 'key1'
 local test_val = 'value1'
@@ -85,18 +95,53 @@ testdb = leveldb.open(opt, 'test.db')
 
 if leveldb.check(testdb)
 then
-    if testdb:put(test_key, test_val)
+    if testdb:put(test_key, test_val, wopt) --synchronous write down he disk
     then
         print ('key1: '.. testdb:get(test_key))
     end
 end
 
+testdb:put('key2', 123456)  -- asynchronous write down he disk
+
+print ('key2: ' .. testdb:get('key2', ropt)) -- no cache read
+
+
 leveldb.close(testdb)
+-- don't forget release cache
+opt:delLRUCache()
+```
+
+
+Batch Example
+-------------
+The WriteBatch holds a sequence of edits to be made to the database, and these edits within the batch are applied in order. 
+Note that we called Delete before Put so that if key1 is identical to key2, we do not end up erroneously dropping the value entirely.
+Apart from its atomicity benefits, WriteBatch may also be used to speed up bulk updates by placing lots of individual mutations into the same batch.
+
+```lua
+local leveldb = require 'lualeveldb'
+
+local opt = leveldb.options()
+
+opt.createIfMissing = true
+opt.errorIfExists = false
 
 testdb = leveldb.open(opt, 'test.db')
-testdb:put('key2', 123456)
 
-print ('key2: ' .. testdb:get('key2'))
+local wopt = leveldb.writeOptions()
+wopt.sync = true
+
+local batch = leveldb.batch()
+
+batch:put("key1", "hello")
+batch:put("key2", "funny")
+batch:delete("key1")
+batch:put("key1", "hotdog")
+
+local ok, err = testdb:write(batch, wopt)
+if not ok then
+   print("batch write err: ", err)
+end
 
 leveldb.close(testdb)
 ```
@@ -151,9 +196,12 @@ opt.createIfMissing = true
 opt.errorIfExists = false
 
 -- setting the bloom filter into the options
-leveldb.bloomFilterPolicy(opt, 10)
+opt:newBloomFilterPolicy(10)
 
 print(opt)
+
+-- don't forget release it
+opt:delBloomFilterPolicy()
 ```
 
 Serialization
@@ -229,6 +277,8 @@ Lua-leveldb is compatible with Lua 5.1 and newer.
 
 Versions
 --------
+ - =0.5: Fixed problem of Batch, Fixed problem of metatable overwrite caused by lightuserdata, Complete/Safety Snapshot and Bloom Filter support, 
+         Removed unnecessary type checking code, Add LRUCache support.
  - =0.4: Requires Lua 5.1 or newer, compatible with LuaJIT, writes simple buffers.
  - =0.3: Requires Lua 5.2 or newer, incompatible with LuaJIT, uses internal serialization for simple Lua types (no tables).
  - <=0.2: Old versions, stay away.
