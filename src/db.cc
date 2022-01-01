@@ -1,31 +1,18 @@
 #include "db.hpp"
 
 /**
- *  Check for a DB type.
- */
-leveldb::DB *check_database(lua_State *L, int index)
-{
-  // UD-type: light meta @ lvldb_open()
-  leveldb::DB **ud = (leveldb::DB **)luaL_checkudata(L, index, LVLDB_MT_DB);
-  luaL_argcheck(L, ud != NULL, index, "'database' expected");
-
-  return ud[0];
-}
-
-/**
  * Data Ops
- * ---------------
- * Data operations are binded to a DB instance, the first parameter
- * is always a DB but the notation used in Lua is db:put, db:get etc.
+ * ----------------------------------------------------------------
+ * Data operations are binded to a db instance, the first parameter
+ * is always a db, the notation used in Lua is db:put, db:get etc.
  */
 
 /**
- * Method that put a key,value into a DB.
- * --------------------------------------$
- * Inserts a key,value pair in the LevelDB Slice format.
- * This DB related method returns in Lua:
- *   * True in case of correct insertion.
- *   * False in case of error.
+ * Method that puts a key,value pair using LevelDB Slice format.
+ * -------------------------------------------------------------$
+ * This method returns:
+ *   * True on success
+ *   * luaL_error on error
  */
 int lvldb_database_put(lua_State *L)
 {
@@ -39,24 +26,24 @@ int lvldb_database_put(lua_State *L)
   if (s.ok())
   {
     lua_pushboolean(L, true);
+
     return 1;
   }
   else
   {
-    //std::cerr << "Error inserting key/value: " << s.ToString() << std::endl;
-    lua_pushboolean(L, false);
-    string_to_lua(L, s.ToString());
-  }
+    luaL_error(L, "db:put call error, %s\"%s\"\n", s.ToString().c_str(), key.ToString().c_str());
 
-  return 2;
+    return -1;
+  }
 }
 
 /**
- * Method that get a value with the given key from a DB.
- * -----------------------------------------------------$
- * This DB related method returns in Lua:
- *  * A string in case of success.
- *  * False in case of error.
+ * Method that gets a value by key.
+ * --------------------------------$
+ * This method returns:
+ *  * String on success
+ *  * nil on missing key
+ *  * luaL_error call on error
  */
 int lvldb_database_get(lua_State *L)
 {
@@ -70,24 +57,28 @@ int lvldb_database_get(lua_State *L)
   if (s.ok())
   {
     string_to_lua(L, value);
-    return 1;
+  }
+  else if (s.IsNotFound())
+  {
+    lua_pushnil(L);
   }
   else
   {
-    //std::cerr << "Error getting value (get): " << s.ToString() << std::endl;
-    lua_pushboolean(L, false);
-    string_to_lua(L, s.ToString());
+    luaL_error(L, "db:get call error, %s\"%s\"\n", s.ToString().c_str(), key.ToString().c_str());
+
+    return -1;
   }
 
-  return 2;
+  return 1;
 }
 
 /**
- * Method that checks the given key's existence from a DB.
- * -----------------------------------------------------$
- * This DB related method returns in Lua:
- *  * True if key is in DB
- *  * False in case of error, or key not exists.
+ * Method that checks if key exists.
+ * ---------------------------------$
+ * This method returns:
+ *  * True if key is found
+ *  * False if key is not found
+ *  * luaL_error on error
  */
 int lvldb_database_has(lua_State *L)
 {
@@ -102,68 +93,28 @@ int lvldb_database_has(lua_State *L)
   {
     lua_pushboolean(L, true);
   }
-  else
+  else if (s.IsNotFound())
   {
     lua_pushboolean(L, false);
+  }
+  else
+  {
+    luaL_error(L, "db:has call error, %s%s\n", s.ToString().c_str(), key.ToString().c_str());
+
+    return -1;
   }
 
   return 1;
 }
 
-/**
- *
+/*
+ * Method for deleting a key,value.
+ * --------------------------------$
+ * This method returns:
+ *  * True on success
+ *  * False on missing key
+ *  * luaL_error on error
  */
-int lvldb_database_set(lua_State *L)
-{
-  leveldb::DB *db = check_database(L, 1);
-  leveldb::Slice value = lua_to_slice(L, 2);
-
-  // #ifdef __x86_64__ || __ppc64__
-#ifdef __x86_64__
-  uint64_t i = 1;
-#else
-  int i = 1;
-#endif
-
-  bool found = false;
-
-  leveldb::Iterator *it = db->NewIterator(lvldb_ropt(L, 3));
-
-  /*
-   *  initialization from the end, usually faster
-   *  on the long run.
-   */
-  for (it->SeekToLast(); it->Valid(); it->Prev())
-  {
-    if (value == it->value())
-    {
-      found = true;
-      break;
-    }
-    i++;
-  }
-
-  if (!found)
-  {
-    //		char *id_str;
-    //
-    //		long int m = 1000;
-    //		snprintf(id_str, m, "%i", i);
-    //
-    //		Slice key = Slice(id_str);
-
-    leveldb::Status s = db->Put(leveldb::WriteOptions(), "0", value);
-
-    assert(s.ok());
-  }
-
-  assert(it->status().ok());
-
-  delete it;
-
-  return 0;
-}
-
 int lvldb_database_del(lua_State *L)
 {
   leveldb::DB *db = check_database(L, 1);
@@ -175,16 +126,19 @@ int lvldb_database_del(lua_State *L)
   if (s.ok())
   {
     lua_pushboolean(L, true);
-    return 1;
+  }
+  else if (s.IsNotFound())
+  {
+    lua_pushboolean(L, false);
   }
   else
   {
-    //std::cerr << "Error deleting key/value entry: " << s.ToString() << std::endl;
-    lua_pushboolean(L, false);
-    string_to_lua(L, s.ToString());
+    luaL_error(L, "db:del call error, %s\"%s\"\n", s.ToString().c_str(), key.ToString().c_str());
+
+    return -1;
   }
 
-  return 2;
+  return 1;
 }
 
 /**
@@ -194,6 +148,7 @@ int lvldb_database_del(lua_State *L)
 
 /**
  * Method that creates an iterator.
+ * --------------------------------$
  */
 int lvldb_database_iterator(lua_State *L)
 {
@@ -209,7 +164,14 @@ int lvldb_database_iterator(lua_State *L)
   return 1;
 }
 
-//TODO test it
+
+/*
+ * Method for writing an atomic transaction.
+ * -----------------------------------------$
+ * This method returns:
+ * * True on success
+ * * luaL_error on error
+ */
 int lvldb_database_write(lua_State *L)
 {
   leveldb::DB *db = check_database(L, 1);
@@ -219,55 +181,64 @@ int lvldb_database_write(lua_State *L)
   if (s.ok())
   {
     lua_pushboolean(L, true);
+
     return 1;
   }
   else
   {
-    //std::cerr << "Error getting value (get): " << s.ToString() << std::endl;
-    lua_pushboolean(L, false);
-    string_to_lua(L, s.ToString());
+    luaL_error(L, "db:write call error, %s\n", s.ToString().c_str());
+
+    return -1;
   }
-  return 2;
 }
 
+
 /**
- * To string function for a DB.
- * ----------------------------
- * Not to use in production environments.
- * Just prints the whole set of key,values from a DB.
+ * To string function for db.
+ * --------------------------$
+ * Not to use in production, dev only.
+ * Prints the whole set of key, values of a db.
  */
 int lvldb_database_tostring(lua_State *L)
 {
   leveldb::DB *db = check_database(L, 1);
+
   std::ostringstream oss(std::ostringstream::out);
 
   leveldb::Iterator *it = db->NewIterator(leveldb::ReadOptions());
 
   oss << "DB output:" << std::endl;
+
   it->SeekToFirst();
 
   if (!it->Valid())
+  {
     oss << "Database is empty." << std::endl;
+  }
   else
   {
-    //for (it->SeekToFirst(); it->Valid(); it->Next()) {
     while (it->Valid())
     {
-      oss << it->key().ToString() << " -> " << it->value().ToString() << std::endl;
-
-#ifdef LUALEVELDB_LOGMODE
-      //std::cout << "LOG: " << it->key().ToString() << " -> "  << it->value().ToString() << std::endl;
-#endif
+      oss << it->key().ToString() << " -> " << "\"" << it->value().ToString() << "\"" << std::endl;
 
       it->Next();
     }
   }
 
-  assert(it->status().ok());
+  if (it->status().ok())
+  {
+    lua_pushstring(L, oss.str().c_str());
 
-  delete it;
+    delete it;
 
-  lua_pushstring(L, oss.str().c_str());
+    return 1;
+  }
+  else
+  {
+    luaL_error(L, "db tostring error, %s\n", it->status().ToString().c_str());
 
-  return 1;
+    delete it;
+
+    return -1;
+  }
 }

@@ -1,10 +1,9 @@
 #include "lua-leveldb.hpp"
 
 // Rock info
-#define LUALEVELDB_VERSION "Lua-LevelDB 0.4.0"
-#define LUALEVELDB_COPYRIGHT "Copyright (C) 2012-18, Lua-LevelDB by Marco Pompili (pompilimrc@gmail.com)."
+#define LUALEVELDB_VERSION "Lua-LevelDB 0.5.0"
+#define LUALEVELDB_COPYRIGHT "Copyright (C) 2012-22, Lua-LevelDB by Marco Pompili (pompilimrc@gmail.com)."
 #define LUALEVELDB_DESCRIPTION "Lua bindings for Google's LevelDB library."
-#define LUALEVELDB_LOGMODE 0
 
 /**
  * Basic calls to LevelDB
@@ -22,18 +21,23 @@ int lvldb_open(lua_State *L)
 
   leveldb::Status s = leveldb::DB::Open(*(opt), filename, &db);
 
-  if (!s.ok())
-    std::cerr << "lvldb_open: Error opening creating database: " << s.ToString() << std::endl;
-  else
+  if (s.ok())
   {
     // Pushing pointer to the database in the stack
     leveldb::DB **ptr = (leveldb::DB **)lua_newuserdata(L, sizeof(void *)); //for have a  unique metatable
     ptr[0] = db;
+
     luaL_getmetatable(L, LVLDB_MT_DB);
     lua_setmetatable(L, -2);
-  }
 
-  return 1;
+    return 1;
+  }
+  else
+  {
+    luaL_error(L, "lvldb_open, %s %s\n", "Error opening db", s.ToString().c_str());
+
+    return -1;
+  }
 }
 
 /**
@@ -68,8 +72,9 @@ int lvldb_options(lua_State *L)
  */
 int lvldb_batch(lua_State *L)
 {
-  leveldb::WriteBatch **batch = (leveldb::WriteBatch **)lua_newuserdata(L, sizeof(leveldb::WriteBatch *)); //for have a  unique metatable
-  batch[0] = new leveldb::WriteBatch;                                                                      // new one;
+  leveldb::WriteBatch **batch = (leveldb::WriteBatch **)lua_newuserdata(L, sizeof(leveldb::WriteBatch *));
+  batch[0] = new leveldb::WriteBatch;
+
   luaL_getmetatable(L, LVLDB_MT_BATCH);
   lua_setmetatable(L, -2);
 
@@ -103,76 +108,21 @@ int lvldb_repair(lua_State *L)
   leveldb::Status s = leveldb::RepairDB(dbname, lvldb_opt(L, 2));
 
   if (s.ok())
+  {
     lua_pushboolean(L, true);
+  }
+  else if (s.IsCorruption())
+  {
+    lua_pushboolean(L, false);
+  }
   else
   {
-    std::cerr << "Error repairing database: " << s.ToString() << std::endl;
-    lua_pushboolean(L, false);
+    luaL_error(L, "lvldb_repair, %s %s\n", "Error repairing database", s.ToString().c_str());
+
+    return -1;
   }
 
   return 1;
-}
-
-int lvldb_bloom_filter_new(lua_State *L)
-{
-  leveldb::Options *opt = (leveldb::Options *)luaL_checkudata(L, 1, LVLDB_MT_OPT);
-  int bits_per_key = lua_tonumber(L, 2);
-
-  opt->filter_policy = leveldb::NewBloomFilterPolicy(bits_per_key);
-
-  return 0;
-}
-
-int lvldb_bloom_filter_del(lua_State *L)
-{
-  leveldb::Options *opt = (leveldb::Options *)luaL_checkudata(L, 1, LVLDB_MT_OPT);
-
-  delete opt->filter_policy;
-
-  return 0;
-}
-
-int lvldb_lru_cache_new(lua_State *L)
-{
-  leveldb::Options *opt = (leveldb::Options *)luaL_checkudata(L, 1, LVLDB_MT_OPT);
-  int size = lua_tonumber(L, 2);
-  opt->block_cache = leveldb::NewLRUCache(size);
-  return 0;
-}
-
-int lvldb_lru_cache_del(lua_State *L)
-{
-  leveldb::Options *opt = (leveldb::Options *)luaL_checkudata(L, 1, LVLDB_MT_OPT);
-
-  delete opt->block_cache;
-
-  return 0;
-}
-/**
- * From the LevelDB documentation:
- * Snapshots provide consistent read-only views over the entire
- * state of the key-value store. ReadOptions::snapshot may be
- * non-NULL to indicate that a read should operate on a particular
- * version of the DB state. If ReadOptions::snapshot is NULL,
- * the read will operate on an implicit snapshot of the current state.
- */
-int lvldb_database_snapshot_get(lua_State *L)
-{
-  leveldb::ReadOptions *ropt = check_read_options(L, 1);
-  leveldb::DB *db = check_database(L, 2);
-
-  ropt->snapshot = db->GetSnapshot();
-
-  return 0;
-}
-
-int lvldb_database_snapshot_del(lua_State *L)
-{
-  leveldb::ReadOptions *ropt = check_read_options(L, 1);
-  leveldb::DB *db = check_database(L, 2);
-  db->ReleaseSnapshot(ropt->snapshot);
-
-  return 0;
 }
 
 /**
@@ -194,10 +144,10 @@ static const luaL_Reg lvldb_leveldb_m[] = {
 
 // options methods
 static const luaL_Reg lvldb_options_m[] = {
-    {"newBloomFilterPolicy", lvldb_bloom_filter_new},
-    {"delBloomFilterPolicy", lvldb_bloom_filter_del},
-    {"newLRUCache", lvldb_lru_cache_new},
-    {"delLRUCache", lvldb_lru_cache_del},
+    // {"newBloomFilterPolicy", lvldb_options_set_bloom_filter_policy},
+    // {"delBloomFilterPolicy", lvldb_options_del_bloom_filter_policy},
+    // {"newLRUCache", lvldb_options_lru_cache_new},
+    // {"delLRUCache", lvldb_options_lru_cache_del},
     {NULL, NULL}};
 
 // options meta-methods
@@ -231,8 +181,8 @@ static const Xet_reg_pre options_setters[] = {
 
 // read options methods
 static const luaL_Reg lvldb_read_options_m[] = {
-    {"getSnapshot", lvldb_database_snapshot_get},
-    {"delSnapshot", lvldb_database_snapshot_del},
+    // {"getSnapshot", lvldb_read_options_database_snapshot_get},
+    // {"delSnapshot", lvldb_read_options_database_snapshot_del},
     {NULL, NULL}};
 
 // read options meta-methods
@@ -275,7 +225,6 @@ static const Xet_reg_pre write_options_setters[] = {
 static const luaL_Reg lvldb_database_m[] = {
     {"__tostring", lvldb_database_tostring},
     {"put", lvldb_database_put},
-    {"set", lvldb_database_set},
     {"get", lvldb_database_get},
     {"has", lvldb_database_has},
     {"delete", lvldb_database_del},
@@ -306,7 +255,6 @@ static const luaL_Reg lvldb_batch_m[] = {
 
 extern "C"
 {
-
   // Initialization
   LUALIB_API int luaopen_lualeveldb(lua_State *L)
   {
@@ -334,6 +282,7 @@ extern "C"
     init_complex_metatable(L, LVLDB_MT_WOPT, lvldb_write_options_m, lvldb_write_options_meta, write_options_getters, write_options_setters);
     init_metatable(L, LVLDB_MT_ITER, lvldb_iterator_m);
     init_metatable(L, LVLDB_MT_BATCH, lvldb_batch_m);
+
     return 1;
   }
 }

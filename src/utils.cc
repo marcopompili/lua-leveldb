@@ -8,8 +8,7 @@
  */
 leveldb::Slice lua_to_slice(lua_State *L, int i)
 {
-  // Note:
-  // http://leveldb.org/ says:
+  // From: leveldb.org
   // "Arbitrary byte arrays
   //  Both keys and values are treated as simple arrays of bytes"
   const char *data = luaL_checkstring(L, i);
@@ -25,8 +24,7 @@ leveldb::Slice lua_to_slice(lua_State *L, int i)
  */
 int string_to_lua(lua_State *L, std::string value)
 {
-  // Note:
-  // http://leveldb.org/ says:
+  // From: leveldb.org
   // "Arbitrary byte arrays
   //  Both keys and values are treated as simple arrays of bytes"
   lua_pushlstring(L, value.c_str(), value.length());
@@ -62,7 +60,26 @@ std::string pointer_tostring(void *p)
  */
 std::string filter_tostring(const leveldb::FilterPolicy *fp)
 {
-  return fp == 0 ? "NULL" : fp->Name();
+  if (fp != nullptr)
+  {
+    return fp == 0 ? "NULL" : fp->Name();
+  }
+  else
+  {
+    return "NULL";
+  }
+}
+
+/**
+ *  Check for a DB type.
+ */
+leveldb::DB *check_database(lua_State *L, int index)
+{
+  // UD-type: light meta @ lvldb_open()
+  leveldb::DB **ud = (leveldb::DB **)luaL_checkudata(L, index, LVLDB_MT_DB);
+  luaL_argcheck(L, ud != NULL, index, "'database' expected");
+
+  return ud[0];
 }
 
 /**
@@ -108,5 +125,6 @@ leveldb::WriteBatch *check_writebatch(lua_State *L, int index)
 {
   leveldb::WriteBatch **ud = (leveldb::WriteBatch **)luaL_checkudata(L, index, LVLDB_MT_BATCH);
   luaL_argcheck(L, ud != NULL, index, "'batch' expected");
+
   return ud[0];
 }

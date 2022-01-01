@@ -4,13 +4,15 @@
 #include "lib.hpp"
 
 // Lua Meta-tables names
-#define LVLDB_MOD_NAME		"leveldb"
-#define LVLDB_MT_OPT		"leveldb.opt"
-#define LVLDB_MT_ROPT		"leveldb.ropt"
-#define LVLDB_MT_WOPT		"leveldb.wopt"
-#define LVLDB_MT_DB		"leveldb.db"
-#define LVLDB_MT_ITER		"leveldb.iter"
-#define LVLDB_MT_BATCH		"leveldb.btch"
+#define LVLDB_MOD_NAME "leveldb"
+#define LVLDB_MT_OPT "leveldb.opt"
+#define LVLDB_MT_ROPT "leveldb.ropt"
+#define LVLDB_MT_WOPT "leveldb.wopt"
+#define LVLDB_MT_DB	"leveldb.db"
+#define LVLDB_MT_ITER "leveldb.iter"
+#define LVLDB_MT_BATCH "leveldb.btch"
+
+// #define bool_tostring (V) (V == 1 ? "true" : "false")
 
 leveldb::Slice lua_to_slice(lua_State*, int);
 int string_to_lua(lua_State*, std::string);
@@ -18,6 +20,7 @@ std::string bool_tostring(int);
 std::string pointer_tostring(void*);
 std::string filter_tostring(const leveldb::FilterPolicy*);
 
+leveldb::DB *check_database(lua_State*, int);
 leveldb::Options *check_options(lua_State*, int);
 leveldb::ReadOptions *check_read_options(lua_State*, int);
 leveldb::WriteOptions *check_write_options(lua_State*, int);
