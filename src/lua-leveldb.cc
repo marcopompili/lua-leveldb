@@ -165,6 +165,7 @@ static const Xet_reg_pre options_getters[] = {
     {"blockSize", get_size, offsetof(leveldb::Options, block_size)},
     {"blockCache", get_size, offsetof(leveldb::Options, block_cache)},
     {"blockRestartInterval", get_int, offsetof(leveldb::Options, block_restart_interval)},
+    {"compression", get_int, offsetof(leveldb::Options, compression)},
     {"filterPolicy", get_size, offsetof(leveldb::Options, filter_policy)},
     {NULL, NULL}};
 
@@ -177,6 +178,7 @@ static const Xet_reg_pre options_setters[] = {
     {"maxOpenFiles", set_int, offsetof(leveldb::Options, max_open_files)},
     {"blockSize", set_size, offsetof(leveldb::Options, block_size)},
     {"blockRestartInterval", set_int, offsetof(leveldb::Options, block_restart_interval)},
+    {"compression", set_int, offsetof(leveldb::Options, compression)},
     {NULL, NULL}};
 
 // read options methods
@@ -274,6 +276,13 @@ extern "C"
 
     lua_pushliteral(L, LUALEVELDB_DESCRIPTION);
     lua_setfield(L, -2, "_DESCRIPTION");
+
+    // compression flags
+    lua_pushinteger(L, leveldb::kNoCompression);
+    lua_setfield(L, -2, "noCompression");
+
+    lua_pushinteger(L, leveldb::kSnappyCompression);
+    lua_setfield(L, -2, "snappyCompression");
 
     // initialize meta-tables methods
     init_metatable(L, LVLDB_MT_DB, lvldb_database_m);
