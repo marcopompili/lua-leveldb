@@ -5,7 +5,9 @@
  */
 leveldb::Iterator *check_iter(lua_State *L) {
   leveldb::Iterator **ud = (leveldb::Iterator**) luaL_checkudata(L, 1, LVLDB_MT_ITER);
+
   luaL_argcheck(L, ud != NULL, 1, "'iterator' expected");
+
   return ud[0];
 }
 
