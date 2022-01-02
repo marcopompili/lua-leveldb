@@ -144,10 +144,10 @@ static const luaL_Reg lvldb_leveldb_m[] = {
 
 // options methods
 static const luaL_Reg lvldb_options_m[] = {
-    // {"newBloomFilterPolicy", lvldb_options_set_bloom_filter_policy},
-    // {"delBloomFilterPolicy", lvldb_options_del_bloom_filter_policy},
-    // {"newLRUCache", lvldb_options_lru_cache_new},
-    // {"delLRUCache", lvldb_options_lru_cache_del},
+    {"newBloomFilterPolicy", lvldb_options_set_bloom_filter_policy},
+    {"delBloomFilterPolicy", lvldb_options_del_bloom_filter_policy},
+    {"newLRUCache", lvldb_options_lru_cache_new},
+    {"delLRUCache", lvldb_options_lru_cache_del},
     {NULL, NULL}};
 
 // options meta-methods
@@ -181,8 +181,8 @@ static const Xet_reg_pre options_setters[] = {
 
 // read options methods
 static const luaL_Reg lvldb_read_options_m[] = {
-    // {"getSnapshot", lvldb_read_options_database_snapshot_get},
-    // {"delSnapshot", lvldb_read_options_database_snapshot_del},
+    {"getSnapshot", lvldb_read_options_database_snapshot_get},
+    {"delSnapshot", lvldb_read_options_database_snapshot_del},
     {NULL, NULL}};
 
 // read options meta-methods

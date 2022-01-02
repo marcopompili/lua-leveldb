@@ -76,7 +76,7 @@ int lvldb_options_tostring(lua_State *L) {
       << "\nParanoid checks: " << bool_tostring(opt->paranoid_checks)
       << "\nEnvironment: " << pointer_tostring(opt->env)
       << "\nInfo log: " << pointer_tostring(opt->info_log)
-      << "\nWrite buffer size: " << opt->write_buffer_size
+      << "\nWrite buffer size: " << opt->write_buffer_size / 1024 << "K"
       << "\nMax open files: " << opt->max_open_files
       << "\nBlock cache: " << pointer_tostring(opt->block_cache)
       << "\nBlock size: " << opt->block_size
@@ -122,6 +122,36 @@ int lvldb_read_options_tostring(lua_State *L) {
 }
 
 /**
+ * From the LevelDB documentation:
+ * Snapshots provide consistent read-only views over the entire
+ * state of the key-value store. ReadOptions::snapshot may be
+ * non-NULL to indicate that a read should operate on a particular
+ * version of the DB state. If ReadOptions::snapshot is NULL,
+ * the read will operate on an implicit snapshot of the current state.
+ */
+int lvldb_read_options_database_snapshot_get(lua_State *L)
+{
+  leveldb::ReadOptions *ropt = check_read_options(L, 1);
+  leveldb::DB *db = check_database(L, 2);
+
+  ropt->snapshot = db->GetSnapshot();
+
+  return 0;
+}
+
+int lvldb_read_options_database_snapshot_del(lua_State *L)
+{
+  leveldb::ReadOptions *ropt = check_read_options(L, 1);
+  leveldb::DB *db = check_database(L, 2);
+
+  db->ReleaseSnapshot(ropt->snapshot);
+
+  ropt->snapshot = nullptr;
+
+  return 0;
+}
+
+/**
  * Create a WriteOptions object.
  */
 int lvldb_write_options(lua_State *L) {
@@ -147,4 +177,46 @@ int lvldb_write_options_tostring(lua_State *L) {
   lua_pushstring(L, oss.str().c_str());
 
   return 1;
+}
+
+int lvldb_options_set_bloom_filter_policy(lua_State *L)
+{
+  leveldb::Options *opt = check_options(L, 1);
+  int bits_per_key = lua_tointeger(L, 2);
+
+  opt->filter_policy = leveldb::NewBloomFilterPolicy(bits_per_key);
+
+  return 0;
+}
+
+int lvldb_options_del_bloom_filter_policy(lua_State *L)
+{
+  leveldb::Options *opt = check_options(L, 1);
+
+  delete opt->filter_policy;
+
+  opt->filter_policy = nullptr;
+
+  return 0;
+}
+
+int lvldb_options_lru_cache_new(lua_State *L)
+{
+  leveldb::Options *opt = check_options(L, 1);
+  size_t size = lua_tointeger(L, 2);
+
+  opt->block_cache = leveldb::NewLRUCache(size);
+
+  return 0;
+}
+
+int lvldb_options_lru_cache_del(lua_State *L)
+{
+  leveldb::Options *opt = check_options(L, 1);
+
+  delete opt->block_cache;
+
+  opt->block_cache = nullptr;
+
+  return 0;
 }

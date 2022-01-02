@@ -9,10 +9,11 @@
  * To string function for the WriteBatch object.
  */
 int lvldb_batch_tostring(lua_State *L) {
-  //leveldb::WriteBatch *batch = check_writebatch(L, 1);
+  leveldb::WriteBatch *batch = check_writebatch(L, 1);
 
   std::ostringstream oss (std::ostringstream::out);
   oss << "Batch" << std::endl;
+  oss << "Approximate Size: " << batch->ApproximateSize() << std::endl;
   
   lua_pushstring(L, oss.str().c_str());
 
@@ -24,6 +25,7 @@ int lvldb_batch_tostring(lua_State *L) {
  */
 int lvldb_batch_put(lua_State *L) {
   leveldb::WriteBatch *batch = check_writebatch(L, 1);
+
   leveldb::Slice key = lua_to_slice(L, 2);
   leveldb::Slice value = lua_to_slice(L, 3);
 
@@ -61,6 +63,8 @@ int lvldb_batch_clear(lua_State *L) {
  */
 int lvldb_batch_release(lua_State *L) {
   leveldb::WriteBatch *batch = check_writebatch(L, 1);
+
   delete batch;
+
   return 0;
 }
